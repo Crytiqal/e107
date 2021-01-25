@@ -11,8 +11,10 @@
 if (!defined('e107_INIT')) { exit; }
 
 $frm = e107::getForm();
+e107::coreLan('menus', true);
 
-class e_menuManager {
+class e_menuManager
+{
 
         var $menu_areas = array();
         var $curLayout;
@@ -24,6 +26,8 @@ class e_menuManager {
 		var $debug;
 		var $menuMessage;
 		var $style = 'default';
+
+		public $dbLayout = '';
 		private $menuData = array();
 
 		function __construct($dragdrop=FALSE)
@@ -215,9 +219,8 @@ class e_menuManager {
 	function menuRenderMessage()
 	{
 	  //	return $this->menuMessage;
-		$text = e107::getMessage()->render('menuUi');
-	  //	$text .= "ID = ".$this->menuId;
-		return $text;
+		//	$text .= "ID = ".$this->menuId;
+		return e107::getMessage()->render('menuUi');
 		
 	}
 
@@ -245,7 +248,10 @@ class e_menuManager {
 			$FOOTER = array();
 			foreach($LAYOUT as $key=>$template)
 			{
-				list($hd,$ft) = explode("{---}",$template);
+				$tmp = explode("{---}",$template);
+				$hd = varset($tmp[0]);
+				$ft = varset($tmp[1]);
+
 				$HEADER[$key] = isset($LAYOUT['_header_']) ? $LAYOUT['_header_'] . $hd : $hd;
 				$FOOTER[$key] = isset($LAYOUT['_footer_']) ? $ft . $LAYOUT['_footer_'] : $ft ;		
 			}	
@@ -260,7 +266,7 @@ class e_menuManager {
 				$FOOTER = ($CUSTOMFOOTER) ? $CUSTOMFOOTER : $FOOTER;
 			}
 		}
-		elseif($this->curLayout && $this->curLayout != "legacyCustom" && (isset($CUSTOMHEADER[$this->curLayout]) || isset($CUSTOMFOOTER[$this->curLayout]))) // 0.7 themes
+		elseif($this->curLayout && $this->curLayout !== "legacyCustom" && (isset($CUSTOMHEADER[$this->curLayout]) || (is_array($CUSTOMFOOTER) && isset($CUSTOMFOOTER[$this->curLayout])))) // 0.7 themes
 		{
 		 // 	echo " MODE 0.7 ".$this->curLayout;
 			$HEADER = isset($CUSTOMHEADER[$this->curLayout]) ? $CUSTOMHEADER[$this->curLayout] : $HEADER;
@@ -563,9 +569,9 @@ class e_menuManager {
 		$sql->select("menus", "*", "menu_path NOT REGEXP('[0-9]+') ");
 		while(list($menu_id, $menu_name, $menu_location, $menu_order) = $sql->fetch('num'))
 		{
-			if(stristr($menustr, $menu_name) === false)
+			if(stripos($menustr, $menu_name) === false)
 			{
-				$sql2->db_Delete("menus", "menu_name='$menu_name'");
+				$sql2->delete("menus", "menu_name='$menu_name'");
 				$message .= MENLAN_11 . " - " . $menu_name . "<br />";
 			}
 		}
@@ -945,11 +951,7 @@ class e_menuManager {
 			}
 		}
 						
-		if(E107_DEBUG_LEVEL > 0)
-		{
-	//		e107::getMessage()->addDebug(print_a($menuArea,true)); 	
-		}
-		
+
 
 	   return varset($menuArea, array());
 
@@ -1048,7 +1050,7 @@ class e_menuManager {
 
 		$pagelist = explode("\r\n", $pageList);
 
-		for ($i = 0 ; $i < count($pagelist) ; $i++)
+		for ($i = 0, $iMax = count($pagelist); $i < $iMax; $i++)
 		{
 			$pagelist[$i] = trim($pagelist[$i]);
 		}
@@ -1250,10 +1252,10 @@ class e_menuManager {
 			<tbody>\n";
 
 		}
-		else
-		{
+		//else
+		//{
        // 	$text .= "<div class='column' id='remove' style='border:1px solid silver'>\n";
-		}
+	//	}
 
 
 		$pageMenu = array();
@@ -1405,15 +1407,15 @@ class e_menuManager {
 
 		//  $tmp = explode("\n", $LAYOUT);
 
-		if(strpos($LAYOUT,'<body ') !== false) // FIXME Find a way to remove the <body> tag from the admin header when menu-manager is active.
-		{
+	//	if(strpos($LAYOUT,'<body ') !== false) // FIXME Find a way to remove the <body> tag from the admin header when menu-manager is active.
+	//	{
 		//	$LAYOUT = preg_replace('/<body[^>]*>/','', $LAYOUT);
-		}
+	//	}
 
 		// Split up using the same function as the shortcode handler
 		$tmp = preg_split('#(\{\S[^\x02]*?\S\})#', $LAYOUT, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
 		$str = array();
-		for($c = 0; $c < count($tmp); $c++)
+		for($c = 0, $cMax = count($tmp); $c < $cMax; $c++)
 		{
 
 
@@ -1486,7 +1488,7 @@ class e_menuManager {
 	//	{
 	//		echo $tp->parseTemplate("{LOGO}");
 	//	}
-		if(strstr($str, "SETSTYLE"))
+		if(strpos($str, "SETSTYLE") !== false)
 		{
 			$style = preg_replace("/\{SETSTYLE=(.*?)\}/si", "\\1", $str);
 
@@ -1512,7 +1514,7 @@ class e_menuManager {
 	//		$tp->parseTemplate("{NAVIGATION".$cust."}",true);
 		//	echo "<span class='label label-info'>Navigation Area</span>";
 	//	}
-		elseif(strstr($str, '{---MODAL---}'))
+		elseif(strpos($str, '{---MODAL---}') !== false)
 		{
 			//echo "\n<!-- Modal would appear here --> \n";
 			echo '<div id="uiAlert" class="notifications center"><!-- empty --></div>';
@@ -1541,28 +1543,29 @@ class e_menuManager {
 
 			//echo getModal();
 		}
-		elseif(strstr($str, '{---CAPTION---}'))
+		elseif(strpos($str, '{---CAPTION---}') !== false)
 		{
 			echo LAN_CAPTION;
 		}
-		elseif(strstr($str, '{LAYOUT_ID}'))
+		elseif(strpos($str, '{LAYOUT_ID}') !== false)
 		{
 			echo 'layout-'.e107::getForm()->name2id($this->curLayout);
 		}
-		elseif(strstr($str, "ALERT"))
+		elseif(strpos($str, "ALERT") !== false)
 		{
+			echo '';
 			//echo "[Navigation Area]";
 		}
-		elseif(strstr($str, "LANGUAGELINKS"))
+		elseif(strpos($str, "LANGUAGELINKS") !== false)
 		{
 			echo "<div class=text style='padding: 2px; text-align: center'>[".LAN_LANGUAGE."]</div>";
 		}
-		elseif(strstr($str, "CUSTOM"))
+		elseif(strpos($str, "CUSTOM") !== false)
 		{
 			$cust = preg_replace("/\W*\{CUSTOM=(.*?)(\+.*)?\}\W*/si", "\\1", $str);
 			echo "<div style='padding: 2px'>[" . $cust . "]</div>";
 		}
-		elseif(strstr($str, "CMENU"))
+		elseif(strpos($str, "CMENU") !== false)
 		{
 			$cust = preg_replace("/\W*\{CMENU=(.*?)(\+.*)?\}\W*/si", "\\1", $str);
 			if(isset($this->customMenu))
@@ -1572,7 +1575,7 @@ class e_menuManager {
 			echo $tp->parseTemplate("{CMENU=".$cust."}",true);
 		//	echo $this->renderPanel('Embedded Custom Menu',$cust);
 		}
-		elseif(strstr($str, "SETIMAGE"))
+		elseif(strpos($str, "SETIMAGE") !== false)
 		{
 			$cust = preg_replace("/\W*\{SETIMAGE(.*?)(\+.*)?\}\W*/si", "\\1", $str);
 			echo $tp->parseTemplate("{SETIMAGE".$cust."}",true);
@@ -1583,13 +1586,13 @@ class e_menuManager {
 			echo "<div class=text style='padding: 30px; text-align: center'>[Welcome Message Area]</div>";
 		//	echo $this->renderPanel('Embedded Custom Menu',$cust);
 		}*/
-		elseif(strstr($str, "{FEATUREBOX"))
+		elseif(strpos($str, "{FEATUREBOX") !== false)
 		{
 			echo "<div class=text style='padding: 80px; text-align: center'>[".LAN_PLUGIN_FEATUREBOX_NAME."]</div>";
 		//	echo $this->renderPanel('Embedded Custom Menu',$cust);
 		}
 		// Display embedded Plugin information.
-		else if(strstr($str, "PLUGIN"))
+		else if(strpos($str, "PLUGIN") !== false)
 		{
 			$plug = preg_replace("/\{PLUGIN=(.*?)\}/si", "\\1", $str);
 			$plug = trim($plug);
@@ -1611,7 +1614,7 @@ class e_menuManager {
 			echo $this->renderPanel($plug, $plugtext);
 			// $ns->tablerender($plug, $plugtext);
 		}
-		else if(strstr($str, "MENU"))
+		else if(strpos($str, "MENU") !== false)
 		{
 
 			$matches = array();
@@ -1769,10 +1772,10 @@ class e_menuManager {
 			$text .= $rs->form_option(MENLAN_25, TRUE, " ");
 		//	$text .= $rs->form_option(MENLAN_15, "", "deac.{$menu_info}");
 	
-			if ($conf) 
-			{
+		//	if ($conf)
+		//	{
 			//	$text .= $rs->form_option("Configure", "", $conf); // TODO Check LAN availability
-			}
+		//	}
 	
 			if ($menu_order != 1) 
 			{
@@ -2013,343 +2016,3 @@ class e_menuManager {
 
 
 
-
-
-
-// new v2.1.4
-class e_menu_layout
-{
-	function __construct()
-	{
-
-	}
-
-	static function getLayouts($theme=null)
-	{
-		if(empty($theme))
-		{
-			$theme = e107::pref('core','sitetheme');
-		}
-
-		$sql = e107::getDb(); // required
-		$tp = e107::getParser();
-
-		$HEADER         = null;
-		$FOOTER         = null;
-		$LAYOUT         = null;
-		$CUSTOMHEADER   = null;
-		$CUSTOMFOOTER   = null;
-
-		$path = e_THEME.$theme.'/';
-		$file = $path."theme.php";
-
-		if(!is_readable($file))
-		{
-			return false;
-		}
-
-		e107::set('css_enabled',false);
-		e107::set('js_enabled',false);
-
-		// new v2.2.2 HTML layout support.
-		if(is_dir($path."layouts") && is_readable($path."theme.html"))
-		{
-			$lyt = scandir($path."layouts");
-			$LAYOUT = array();
-
-			foreach($lyt as $lays)
-			{
-				if($lays === '.' || $lays === '..')
-				{
-					continue;
-				}
-
-				$key = str_replace("_layout.html", '', $lays);
-
-				if($lm = e_theme::loadLayout($key, $theme))
-				{
-					$LAYOUT  = $LAYOUT + $lm;
-				}
-
-			}
-
-		}
-		else // prior to v2.2.2
-		{
-
-			$themeFileContent = file_get_contents($file);
-
-			$srch = array('<?php','?>');
-
-			$themeFileContent = preg_replace('/\(\s?THEME\s?\./', '( e_THEME. "'.$theme.'/" .', str_replace($srch, '', $themeFileContent));
-
-			$themeFileContent = str_replace('tablestyle', $tp->filter($theme, 'wd')."_tablestyle",$themeFileContent); // rename function to avoid conflicts while parsing.
-
-			$themeFileContent = str_replace("class ".$theme."_theme", "class ".$theme."__theme", $themeFileContent); // rename class to avoid conflicts while parsing.
-
-			try
-			{
-			   @eval($themeFileContent);
-			}
-			catch (ParseError $e)
-			{
-				echo "<div class='alert alert-danger'>Couldn't parse theme.php: ". $e->getMessage()." </div>";
-			}
-		}
-
-
-		e107::set('css_enabled',true);
-		e107::set('js_enabled',true);
-
-		$head = array();
-		$foot = array();
-
-
-
-
-		if(isset($LAYOUT) && (isset($HEADER) || isset($FOOTER)))
-		{
-			$fallbackLan = "This theme is using deprecated elements. All [x]HEADER and [x]FOOTER variables should be removed from theme.php."; // DO NOT TRANSLATE!
-			$warningLan = $tp->lanVars(deftrue('MENLAN_60',$fallbackLan),'$');
-			echo "<div class='alert alert-danger'>".$warningLan."</div>";
-
-		}
-
-
-
-		if(isset($LAYOUT) && is_array($LAYOUT)) // $LAYOUT is a combined $HEADER,$FOOTER.
-		{
-			foreach($LAYOUT as $key=>$template)
-			{
-				if($key == '_header_' || $key == '_footer_' || $key == '_modal_')
-				{
-					continue;
-				}
-
-				if(strpos($template,'{---}') !==false)
-				{
-					list($hd,$ft) = explode("{---}",$template);
-					$head[$key] = isset($LAYOUT['_header_']) ? $LAYOUT['_header_'] . $hd : $hd;
-					$foot[$key] = isset($LAYOUT['_footer_']) ? $ft . $LAYOUT['_footer_'] : $ft ;
-				}
-				else
-				{
-					e107::getMessage()->addDebug('Missing "{---}" in $LAYOUT["'.$key.'"] ');
-				}
-			}
-			unset($hd,$ft);
-		}
-
-
-        if(is_string($CUSTOMHEADER))
-        {
-			$head['legacyCustom'] = $CUSTOMHEADER;
-        }
-        elseif(is_array($CUSTOMHEADER))
-        {
-            foreach($CUSTOMHEADER as $k=>$v)
-            {
-                $head[$k] = $v;
-            }
-        }
-
-        if(is_string($HEADER))
-        {
-			$head['legacyDefault'] = $HEADER;
-        }
-        elseif(is_array($HEADER))
-        {
-			 foreach($HEADER as $k=>$v)
-            {
-                $head[$k] = $v;
-            }
-
-        }
-
-		if(is_string($CUSTOMFOOTER))
-        {
-			$foot['legacyCustom'] = $CUSTOMFOOTER;
-        }
-        elseif(is_array($CUSTOMFOOTER))
-        {
-	        foreach($CUSTOMFOOTER as $k=>$v)
-            {
-                $foot[$k] = $v;
-            }
-        }
-
-
-        if(is_string($FOOTER))
-        {
-			$foot['legacyDefault'] = $FOOTER;
-        }
-        elseif(is_array($FOOTER))
-        {
-	        foreach($FOOTER as $k=>$v)
-            {
-                $foot[$k] = $v;
-            }
-        }
-
-		$layout = array();
-
-
-
-		foreach($head as $k=>$v)
-		{
-			$template = $head[$k]."\n{---}".$foot[$k];
-			$layout['templates'][$k] = $template;
-			$layout['menus'][$k] = self::countMenus($template, $k);
-		}
-
-
-		return $layout;
-
-
-	}
-
-
-	private static function countMenus($template, $name)
-	{
-		if(preg_match_all("/\{(?:MENU|MENUAREA)=([\d]{1,3})(:[\w\d]*)?\}/", $template, $matches))
-		{
-			sort($matches[1]);
-			return $matches[1];
-		}
-
-		e107::getDebug()->log("No Menus Found in Template:".$name." with strlen: ".strlen($template));
-
-		return array();
-	}
-
-
-
-	static function menuSelector()
-	{
-
-	//	$p = e107::getPref('e_menu_list');	// new storage for xxxxx_menu.php list.
-		$sql = e107::getDb();
-		$frm = e107::getForm();
-
-		$done = array();
-
-		$pageMenu = array();
-		$pluginMenu = array();
-
-		$sql->select("menus", "menu_name, menu_id, menu_pages, menu_path", "1 ORDER BY menu_name ASC");
-		while ($row = $sql->fetch())
-		{
-
-			if(in_array($row['menu_name'],$done))
-			{
-				continue;
-			}
-
-			$done[] = $row['menu_name'];
-
-			if(is_numeric($row['menu_path']))
-			{
-				$pageMenu[] = $row;
-			}
-			else
-			{
-				$pluginMenu[] = $row;
-			}
-
-		}
-
-		$tab1 = '<div class="menu-selector"><ul class="list-unstyled">';
-
-		foreach($pageMenu as $row)
-		{
-			$menuInf = (!is_numeric($row['menu_path'])) ? ' ('.substr($row['menu_path'],0,-1).')' : " (#".$row['menu_path'].")";
-			$tab1 .= "<li>".$frm->checkbox('menuselect[]',$row['menu_id'],'',array('label'=>"<span>".$row['menu_name']."<small>".$menuInf."</small></span>"))."</li>";
-		}
-
-		$tab1 .= '</ul></div>';
-
-		$tab2 = '<div class="menu-selector"><ul class=" list-unstyled">';
-		foreach($pluginMenu as $row)
-		{
-			$menuInf = (!is_numeric($row['menu_path'])) ? ' ('.substr($row['menu_path'],0,-1).')' : " (#".$row['menu_path'].")";
-			$tab2 .= "<li>".$frm->checkbox('menuselect[]',$row['menu_id'],'',array('label'=>"<span>".$row['menu_name']."<small>".$menuInf."</small></span>"))."</li>";
-		}
-
-		$tab2 .= '</ul></div>';
-
-		$tabs = array(
-			'custom' => array('caption'=>'<i title="'.MENLAN_49.'" class="S16 e-custom-16"></i>', 'text'=>$tab1),
-			'plugin' => array('caption'=>'<i title="'.ADLAN_CL_7.'" class="S16 e-plugins-16"></i>', 'text'=>$tab2)
-
-		);
-
-
-		$defLayout =e107::getRegistry('core/e107/menu-manager/curLayout');;
-
-		$text = '<form id="e-mm-selector" action="'.e_ADMIN_ABS.'menus.php?configure='.$defLayout.'" method="post" target="e-mm-iframe">';
-
-		$text .= "<input type='hidden' id='curLayout' value='".$defLayout."' />";
-
-
-		$layouts = self::getLayouts();
-		$tp = e107::getParser();
-
-	//	 var_dump($layouts['menus']);
-
-
-		$text .= '
-
-		    <div class="dropdown pull-right e-mm-selector-container">
-
-		        <a class="btn btn-default btn-secondary btn-sm e-mm-selector " title="'.LAN_ACTIVATE.'">'.LAN_GO." ".e107::getParser()->toGlyph('fa-chevron-right').'</a>';
-
-				$menuButtonLabel = defset("MENLAN_59", "Area [x]");
-
-		        foreach($layouts['menus'] as $name=>$areas)
-		        {
-					$text .= '<ul class="dropdown-menu e-mm-selector '.$name.'" >
-					<li><div>';
-
-					foreach ($areas as $menu_act)
-					{
-						$text .= "<input type='submit' class='btn btn-sm btn-primary col-xs-6'  name='menuActivate[".trim($menu_act)."]' value=\"".$tp->lanVars($menuButtonLabel,trim($menu_act))."\" />\n";
-					}
-
-					$text .= '</div></li></ul>';
-
-		        }
-
-		        $text .= '
-
-		    </div>';
-
-
-		$text .= $frm->tabs($tabs);
-
-
-
-
-
-		$text .= '</form>';
-
-		$tp = e107::getParser();
-
-		$caption = MENLAN_22;
-
-		;
-
-
-
-
-		return array('caption'=>$caption,'text'=>$text);
-
-
-
-
-
-
-	}
-
-
-
-}

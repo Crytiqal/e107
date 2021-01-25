@@ -11,7 +11,7 @@
  */
 
 $eplug_admin = TRUE;
-require_once("../../class2.php");
+require_once(__DIR__.'/../../class2.php');
 require_once(e_HANDLER."userclass_class.php");
 	
 e107::includeLan(e_PLUGIN."comment_menu/languages/".e_LANGUAGE.".php");
@@ -39,11 +39,11 @@ if (isset($_POST['update_menu']))
 	$tp = e107::getParser();
 	foreach($_POST as $key=>$value)
 	{
-		if($key == "comment_caption")
-		{
+		//if($key == "comment_caption")
+	//	{
 		//	$temp['comment_caption'][e_LANGUAGE] = $tp->toDB($value);
 		//	continue;
-		}
+	//	}
 
 
 		if ($value != LAN_UPDATE) 

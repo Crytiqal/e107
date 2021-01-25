@@ -16,11 +16,16 @@ if (!defined('e107_INIT'))
 }
 
 e107::getDebug()->logTime('(Start boot.php)');
-header('Content-type: text/html; charset=utf-8', TRUE);
+
+if(!e107::isCli())
+{
+	header('Content-type: text/html; charset=utf-8', TRUE);
+}
+
 define('ADMINFEED', 'https://e107.org/adminfeed');
 
 
-if(!empty($_GET['iframe'])) // global iframe support. 
+if(!empty($_GET['iframe']) && !defined('e_IFRAME')) // global iframe support.
 {
 	define('e_IFRAME', true);
 }
@@ -52,7 +57,10 @@ if(e_AJAX_REQUEST && getperms('0') &&  varset($_GET['mode']) == 'core' && ($_GET
 
 if(e_AJAX_REQUEST && getperms('0') &&  varset($_GET['mode']) == 'addons' && ($_GET['type'] == 'update'))
 {
-	e107::getSession()->set('addons-update-checked',true);
+	if(!E107_DEBUG_LEVEL)
+	{
+		e107::getSession()->set('addons-update-checked',true);
+	}
 
 	/** @var admin_shortcodes $sc */
 	$sc = e107::getScBatch('admin');
@@ -62,7 +70,6 @@ if(e_AJAX_REQUEST && getperms('0') &&  varset($_GET['mode']) == 'addons' && ($_G
 
 	$text = $sc->renderAddonUpdate($plugins);
 	$text .= $sc->renderAddonUpdate($themes);
-
 
 	if(empty($text))
 	{
@@ -78,7 +85,10 @@ if(e_AJAX_REQUEST && getperms('0') &&  varset($_GET['mode']) == 'addons' && ($_G
 
 	echo $ret;
 
-	e107::getSession()->set('addons-update-status',$ret);
+	if(!E107_DEBUG_LEVEL)
+	{
+		e107::getSession()->set('addons-update-status',$ret);
+	}
 
 	exit;
 
@@ -225,11 +235,14 @@ e107::coreLan('footer', true);
 
 // Get Icon constants, theme override (theme/templates/admin_icons_template.php) is allowed
 e107::getDebug()->logTime('[boot.php: Loading admin_icons]');
-include_once(e107::coreTemplatePath('admin_icons'));
+e107::loadAdminIcons();
+e107::getDebug()->logTime('[boot.php: After Loading admin_icons]');
+//include_once(e107::coreTemplatePath('admin_icons'));
 
 
 if(!defset('e_ADMIN_UI') && !defset('e_PAGETITLE'))
 {
+	e107::getDebug()->logTime('[boot.php: Loading adminLinks(\'legacy\')]');
 	$array_functions = e107::getNav()->adminLinks('legacy'); // replacement see e107_handlers/sitelinks.php
 	foreach($array_functions as $val)
 	{
@@ -341,7 +354,7 @@ if (!function_exists("parse_admin"))
 
 		$adtmp = explode("\n", $ADMINLAYOUT);
 		
-		for ($a = 0; $a < count($adtmp); $a++)
+		for ($a = 0, $aMax = count($adtmp); $a < $aMax; $a++)
 		{
 			if (preg_match("/{.+?}/", $adtmp[$a]))
 			{

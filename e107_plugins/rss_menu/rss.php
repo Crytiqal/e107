@@ -21,7 +21,12 @@ Plugins should use an e_rss.php file in their plugin folder
 */
 if (!defined('e107_INIT'))
 {
-	require_once('../../class2.php');
+	if(!empty($_GET) || !empty($argv))
+	{
+		$_E107['minimal'] = true;
+	}
+
+	require_once(__DIR__.'/../../class2.php');
 }
 
 $e107 = e107::getInstance();
@@ -34,30 +39,12 @@ if (!e107::isInstalled('rss_menu'))
 
 $tp = e107::getParser();
 
-require_once(e_PLUGIN.'rss_menu/rss_shortcodes.php');
+//require_once(e_PLUGIN.'rss_menu/rss_shortcodes.php');
 require_once(e_HANDLER.'userclass_class.php');
-
-/*
-global $tp;
-if (!is_object($tp->e_bb))
-{
-	require_once(e_HANDLER.'bbcode_handler.php');
-	$tp->e_bb = new e_bbcode;
-}
-*/
 
 // Get language file
 e107::includeLan(e_PLUGIN.'rss_menu/languages/'.e_LANGUAGE.'_admin_rss_menu.php');
 
-// Get template
-if (is_readable(THEME.'rss_template.php'))
-{
-	require_once(THEME.'rss_template.php');
-}
-else
-{
-	require_once(e_PLUGIN.'rss_menu/rss_template.php');
-}
 
 // Query handler
 if(!empty($_GET['type']))
@@ -80,14 +67,15 @@ else
 	$topic_id 		= false;
 }
 
-
 // List available rss feeds
 if (empty($rss_type))
 {	
 	// Display list of all feeds
 	require_once(HEADERF);
 
-	// require_once(e_PLUGIN.'rss_menu/rss_template.php');		Already loaded
+	require_once(e_PLUGIN.'rss_menu/rss_shortcodes.php');
+	$sc = e107::getScBatch('rss_menu', true);
+	$sc->wrapper('rss/page');
 
 	if(!$sql->select('rss', '*', "`rss_class` = 0 AND `rss_limit` > 0 AND `rss_topicid` NOT REGEXP ('\\\*') ORDER BY `rss_name`"))
 	{
@@ -95,12 +83,35 @@ if (empty($rss_type))
 	}
 	else
 	{
-		$text = $RSS_LIST_HEADER;
+		if($template = e107::getTemplate('rss_menu', 'rss', 'page'))
+		{
+			$RSS_LIST_HEADER    = $template['start'];
+			$RSS_LIST_TABLE     = $template['item'];
+			$RSS_LIST_FOOTER    = $template['end'];
+		}
+		else
+		{
+			// Get Legacy template
+			if (is_readable(THEME.'rss_template.php'))
+			{
+				require_once(THEME.'rss_template.php');
+			}
+			else
+			{
+				require_once(e_PLUGIN.'rss_menu/rss_template.php');
+			}
+		}
+
+		$text = $tp->parseTemplate($RSS_LIST_HEADER, true);
+
 		while($row = $sql->fetch())
 		{
-			$text .= $tp->parseTemplate($RSS_LIST_TABLE, FALSE, $rss_shortcodes);
+			$sc->setVars($row);
+			$text .= $tp->parseTemplate($RSS_LIST_TABLE, false, $sc);
 		}
-		$text .= $RSS_LIST_FOOTER;
+
+		$text .= $tp->parseTemplate($RSS_LIST_FOOTER, true);
+
 		$ns->tablerender(RSS_MENU_L2, $text);
 	}
 
@@ -109,7 +120,10 @@ if (empty($rss_type))
 }
 
 
-while (@ob_end_clean());
+	while (ob_get_length() !== false)  // destroy all ouput buffering
+	{
+        ob_end_clean();
+	}
 
 // Returning feeds here
 // Conversion table for old urls -------
@@ -179,7 +193,7 @@ else
 	require_once(HEADERF);
 	$ns->tablerender(LAN_ERROR, RSS_LAN_ERROR_1);
 	require_once(FOOTERF);
-	exit;
+
 }
 
 class rssCreate
@@ -452,7 +466,7 @@ class rssCreate
 			break;
 
 			case 2:	// RSS 2.0
-				$sitebutton = (strstr(SITEBUTTON, "http:") ? SITEBUTTON : SITEURL.str_replace("../", "", SITEBUTTON));
+				$sitebutton = (strpos(SITEBUTTON, "http:") !== false ? SITEBUTTON : SITEURL.str_replace("../", "", SITEBUTTON));
 				echo "<?xml version=\"1.0\" encoding=\"utf-8\"?".">
 				<!-- generator=\"e107\" -->
 				<!-- content type=\"".$this->contentType."\" -->
@@ -491,7 +505,7 @@ class rssCreate
 					echo "
 					<image>
 					<title>".$tp->toRss($rss_title)."</title>
-					<url>".(strstr(SITEBUTTON, "http:")!==FALSE ? SITEBUTTON : SITEURL.str_replace("../", "",SITEBUTTON))."</url>
+					<url>".(strpos(SITEBUTTON, "http:") !== false ? SITEBUTTON : SITEURL.str_replace("../", "",SITEBUTTON))."</url>
 					<link>".$pref['siteurl']."</link>
 					<width>88</width>
 					<height>31</height>
@@ -674,10 +688,10 @@ class rssCreate
 					<contributor>\n
 						<name>e107</name>\n
 					</contributor>\n
-					<generator uri='http://e107.org/' version='".e_VERSION."'>e107</generator>\n";
+					<generator uri='http://e107.org/' version='".defset('e_VERSION')."'>e107</generator>\n";
 					//<icon>/icon.jpg</icon>\n
 					echo "
-					<logo>".(strstr(SITEBUTTON, "http:") ? SITEBUTTON : SITEURL.str_replace("../", "", SITEBUTTON))."</logo>\n
+					<logo>".(strpos(SITEBUTTON, "http:") !== false ? SITEBUTTON : SITEURL.str_replace("../", "", SITEBUTTON))."</logo>\n
 					<rights type='html'>".$pref['siteadmin']." - ".$this->nospam($pref['siteadminemail'])."</rights>\n";
 					if($pref['sitedescription']){
 					echo "

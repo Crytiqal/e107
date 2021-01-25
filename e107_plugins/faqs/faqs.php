@@ -12,7 +12,7 @@
 
 if (!defined('e107_INIT'))
 {
-	require_once("../../class2.php");
+	require_once(__DIR__.'/../../class2.php');
 }
 
 if(file_exists(e_PLUGIN."faqs/controllers/list.php")) // bc for old controller.
@@ -65,10 +65,7 @@ if (!vartrue($_GET['elan']) && empty($_GET))
 	$id 	= $qs[1];
 	$idx 	= $qs[2];
 }
-else
-{
-	
-}
+
 
 
 
@@ -82,7 +79,7 @@ if (isset($_POST['faq_submit']))
 	{
 		$faq_question 	= $tp->toDB($_POST['faq_question']);
 		$data 			= $tp->toDB($_POST['data']);
-		$count 			= ($sql->db_Count("faqs", "(*)", "WHERE faq_parent='".intval($_POST['faq_parent'])."' ") + 1);
+		$count 			= ($sql->count("faqs", "(*)", "WHERE faq_parent='".intval($_POST['faq_parent'])."' ") + 1);
 		
 		$sql->insert("faqs", " 0, '".$_POST['faq_parent']."', '$faq_question', '$data', '".filter_var($_POST['faq_comment'], FILTER_SANITIZE_STRING)."', '".time()."', '".USERID."', '".$count."' ");
 		

@@ -10,7 +10,7 @@
  *
 */
 
-require_once('../class2.php');
+require_once(__DIR__.'/../class2.php');
 if (!getperms('3'))
 {
 	e107::redirect('admin');
@@ -119,7 +119,7 @@ function show_admins()
 
 	
 	
-	$sql->db_Select("user", "*", "user_admin='1'");
+	$sql->select("user", "*", "user_admin='1'");
 
 	$text = "
 	<form action='".e_SELF."' method='post' id='del_administrator'>

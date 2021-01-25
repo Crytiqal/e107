@@ -99,7 +99,7 @@ class download
 	
 		$tmp = explode('.', e_QUERY);
 		
-		$order = str_replace("download_","",$pref['download_order']);
+		$order = str_replace("download_","", varset($pref['download_order'], 'id'));
 						
 		// Set Defaults
 		$this->qry['action']		= 'maincats';
@@ -134,7 +134,7 @@ class download
 			   $this->qry['order'] 		= preg_replace("#\W#", "", $tp->toDB($tmp[4]));
 			   $this->qry['sort'] 		= preg_replace("#\W#", "", $tp->toDB($tmp[5]));
 		   	}
-			elseif($tmp[1])
+			elseif(!empty($tmp[1]))
 		   	{
 			   $this->qry['action'] 	= preg_replace("#\W#", "", $tp->toDB($tmp[0]));
 			   $this->qry['id'] 		= intval($tmp[1]);
@@ -164,37 +164,34 @@ class download
 
 		$pref = e107::getPref();
 
-
-
-		if($this->qry['action'] == 'maincats')
+		switch($this->qry['action'])
 		{
-		//
+			case 'maincats':
+				e107::canonical('download', 'index');
+			break;
+
+			case "list":
+				$this->loadList();
+				break;
+
+			case "view":
+				$this->loadView();
+				break;
+
+			case "report":
+				if(check_class($pref['download_reportbroken']))
+				{
+					$this->loadReport();
+				}
+				break;
+		/*
+			case 'mirror':
+			case 'error':
+
+			break; */
+
 		}
 
-		if($this->qry['action'] == 'list')
-		{
-			$this->loadList();
-		}
-
-		if($this->qry['action'] == 'view')
-		{
-			$this->loadView();
-		}
-
-		if ($this->qry['action'] == "report" && check_class($pref['download_reportbroken']))
-		{
-			$this->loadReport();
-		}
-
-		if($this->qry['action'] == 'mirror')
-		{
-		//
-		}
-
-		if($this->qry['action'] == 'error')
-		{
-
-		}
 
 	}
 
@@ -313,7 +310,7 @@ class download
 		if(!defined("DL_IMAGESTYLE")){ define("DL_IMAGESTYLE","border:1px solid blue");}
 
 	   // Read in tree of categories which this user is allowed to see
-		$dlcat = new downloadCategory(varset($pref['download_subsub'],1),USERCLASS_LIST,$maincatval,varset($pref['download_incinfo'],FALSE));
+		$dlcat = new downloadCategory(varset($pref['download_subsub'],1),USERCLASS_LIST, null ,varset($pref['download_incinfo'],FALSE));
 
 		if ($dlcat->down_count == 0)
 	   	{
@@ -428,11 +425,14 @@ class download
 	{
 		if($dlrow = $this->getCategory($this->qry['id']))
 		{
-			define("e_PAGETITLE", LAN_PLUGIN_DOWNLOAD_NAME." / ".$dlrow['download_category_name']);
+			e107::title(LAN_PLUGIN_DOWNLOAD_NAME." / ".$dlrow['download_category_name']);
+			e107::canonical('download', 'category', $dlrow);
+		//	define("e_PAGETITLE", LAN_PLUGIN_DOWNLOAD_NAME." / ".$dlrow['download_category_name']);
 		}
 		else
 		{  // No access to this category
-			define("e_PAGETITLE", LAN_PLUGIN_DOWNLOAD_NAME);
+			e107::title(LAN_PLUGIN_DOWNLOAD_NAME);
+			//define("e_PAGETITLE", LAN_PLUGIN_DOWNLOAD_NAME);
 		}
 
 		return null;
@@ -559,7 +559,9 @@ class download
 
 		$DL_TITLE = e107::getParser()->parseTemplate($this->template['pagetitle'], true, $sc);
 
-		define("e_PAGETITLE", $DL_TITLE);
+	//	define("e_PAGETITLE", $DL_TITLE);
+		e107::title($DL_TITLE);
+		e107::canonical('download', 'item', $dlrow);
 
 		return null;
 	}
@@ -720,11 +722,11 @@ class download
 	   	   return $ns->tablerender(LAN_PLUGIN_DOWNLOAD_NAME, "<div class='alert alert-info' style='text-align:center'>".LAN_NO_RECORDS_FOUND."</div>",'download-list',true);
 		}
 		
-		if ($dlrow['download_category_parent'] == 0)  // It's a main category - change the listing type required
-	      { 
+		//if ($dlrow['download_category_parent'] == 0)  // It's a main category - change the listing type required
+	   //   {
 	      //   $action = 'maincats';
 	  // 	  	 $maincatval = $id;
-		}
+	//	}
 		
 		$dl_text = $tp->parseTemplate($this->templateHeader, TRUE, $sc);
 						

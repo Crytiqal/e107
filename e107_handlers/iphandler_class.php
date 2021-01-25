@@ -182,9 +182,9 @@ class eIPHandler
 				$this->logBanItem($ipStatus, 'result --> '.$ipStatus); // only log blacklist
 				$this->banAction($ipStatus);		// This will abort if appropriate
 			}
-			elseif ($ipStatus > 0)
-			{	// Whitelisted - we may want to set a specific indicator
-			}
+			//elseif ($ipStatus > 0)
+		//	{	// Whitelisted - we may want to set a specific indicator
+		//	}
 		}
 		// Continue here - user not banned (so far)
 	}
@@ -198,7 +198,7 @@ class eIPHandler
 
 	public function debug($value)
 	{
-		$this->debug = ($value === true) ? true: false;
+		$this->debug = $value === true;
 	}
 
 
@@ -314,7 +314,7 @@ class eIPHandler
 		if ($ip == 'ff02:0000:0000:0000:0000:0000:0000:0001') return FALSE;
 		if ($ip == '::1') return FALSE;											// localhost
 		if ($ip == '0000:0000:0000:0000:0000:0000:0000:0001') return FALSE;
-		if (substr($ip, 0, 5) == 'fc00:') return FALSE;							// local addresses
+		if (strpos($ip, 'fc00:') === 0) return FALSE;							// local addresses
 		// @todo add:
 		// ::0 (all zero) - invalid
 		// ff02::1:ff00:0/104 - Solicited-Node multicast addresses - add?
@@ -397,7 +397,7 @@ class eIPHandler
 
 		$vals  = file($fileName);
 		if ($vals === FALSE || count($vals) == 0) return;
-		if (substr($vals[0], 0, 5) != '<?php')
+		if (strpos($vals[0], '<?php') !== 0)
 		{
 			echo 'Invalid message file';
 			die();
@@ -405,7 +405,7 @@ class eIPHandler
 		unset($vals[0]);
 		foreach ($vals as $line)
 		{
-			if (substr($line, 0, 1) == ';') continue;
+			if (strpos($line, ';') === 0) continue;
 			if (strpos($line, $search) === 0)
 			{	// Found the action line
 				if (e107::getPref('ban_retrigger'))
@@ -467,7 +467,7 @@ class eIPHandler
 
 		$vals  = file($fileName);
 		if ($vals === FALSE || count($vals) == 0) return $ret;
-		if (substr($vals[0], 0, 5) != '<?php')
+		if (strpos($vals[0], '<?php') !== 0)
 		{
 			echo 'Invalid list file';
 			die();			// Debatable, because admins can't get in if this fails. But can manually delete the file.
@@ -475,7 +475,7 @@ class eIPHandler
 		unset($vals[0]);
 		foreach ($vals as $line)
 		{
-			if (substr($line, 0, 1) == ';') continue;
+			if (strpos($line, ';') === 0) continue;
 			if (trim($line))
 			{
 				$tmp = explode(' ',$line);
@@ -660,23 +660,23 @@ class eIPHandler
 	 */
 	public function ipDecode($ip, $IP4Legacy = TRUE)
 	{
-		if (strstr($ip,'.'))
+		if (strpos($ip, '.') !== false)
 		{
 			if ($IP4Legacy) return $ip;			// Assume its unencoded IPV4
 			$ipa = explode('.', $ip);
 			$ip = '0:0:0:0:0:ffff:'.sprintf('%02x%02x:%02x%02x', $ipa[0], $ipa[1], $ipa[2], $ipa[3]);
 			$ip = str_repeat('0000'.':', 5).'ffff:'.$this->ip4Encode($ip, TRUE, ':');
 		}
-		if (strstr($ip,'::')) return $ip;			// Assume its a compressed IPV6 address already
-		if ((strlen($ip) == 8) && !strstr($ip,':'))
+		if (strpos($ip, '::') !== false) return $ip;			// Assume its a compressed IPV6 address already
+		if ((strlen($ip) == 8) && strpos($ip, ':') === false)
 		{	// Assume a 'legacy' IPV4 encoding
 			$ip = '0:0:0:0:0:ffff:'.implode(':',str_split($ip,4));		// Turn it into standard IPV6
 		}
-		elseif ((strlen($ip) == 32) && !strstr($ip,':'))
+		elseif ((strlen($ip) == 32) && strpos($ip, ':') === false)
 		{  // Assume a compressed hex IPV6
 			$ip = implode(':',str_split($ip,4));
 		}
-		if (!strstr($ip,':')) return FALSE;			// Return on problem - no ':'!
+		if (strpos($ip, ':') === false) return FALSE;			// Return on problem - no ':'!
 		$temp = explode(':',$ip);
 		$z = 0;		// State of the 'zero manager' - 0 = not started, 1 = running, 2 = done
 		$ret = '';
@@ -711,7 +711,7 @@ class eIPHandler
 		{  // Need to add trailing zeros, or double colon
 			if ($zc > 1) $ret .= '::'; else $ret .= ':0';
 		}
-		if ($IP4Legacy && (substr($ret,0,7) == '::ffff:'))
+		if ($IP4Legacy && (strpos($ret, '::ffff:') === 0))
 		{
 			$temp = str_replace(':', '', substr($ip,-9, 9));
 			$tmp = str_split($temp, 2);			// Four 2-character hex values
@@ -938,16 +938,16 @@ class eIPHandler
 		$sql = e107::getDb();
 		$pref = e107::getPref();
 		$tp = e107::getParser();
-		$admin_log = e107::getAdminLog();
+		$admin_log = e107::getLog();
 
-		//$admin_log->e_log_event(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","Check for Ban",$query,FALSE,LOG_TO_ROLLING);
+		//$admin_log->addEvent(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","Check for Ban",$query,FALSE,LOG_TO_ROLLING);
 		if ($sql->select('banlist', '*', $query.' ORDER BY `banlist_bantype` DESC'))
 		{
 			// Any whitelist entries will be first, because they are positive numbers - so we can answer based on the first DB record read
 			$row = $sql->fetch();
 			if($row['banlist_bantype'] >= eIPHandler::BAN_TYPE_WHITELIST)
 			{
-				//$admin_log->e_log_event(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","Whitelist hit",$query,FALSE,LOG_TO_ROLLING);
+				//$admin_log->addEvent(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","Whitelist hit",$query,FALSE,LOG_TO_ROLLING);
 				return true;        // Whitelisted entry
 			}
 
@@ -972,9 +972,9 @@ class eIPHandler
 
 				$sql->update('banlist', $updateQry);
 				$this->regenerateFiles();
-				//$admin_log->e_log_event(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","Retrigger Ban",$row['banlist_ip'],FALSE,LOG_TO_ROLLING);
+				//$admin_log->addEvent(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","Retrigger Ban",$row['banlist_ip'],FALSE,LOG_TO_ROLLING);
 			}
-			//$admin_log->e_log_event(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","Active Ban",$query,FALSE,LOG_TO_ROLLING);
+			//$admin_log->addEvent(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","Active Ban",$query,FALSE,LOG_TO_ROLLING);
 			if ($show_error)
 			{
 				header('HTTP/1.1 403 Forbidden', true);
@@ -990,7 +990,7 @@ class eIPHandler
 
 				echo $tp->toHTML(varset($pref['ban_messages'][$row['banlist_bantype']])); 	// Show message if one set
 			}
-			//$admin_log->e_log_event(4, __FILE__."|".__FUNCTION__."@".__LINE__, 'BAN_03', 'LAN_AUDIT_LOG_003', $query, FALSE, LOG_TO_ROLLING);
+			//$admin_log->addEvent(4, __FILE__."|".__FUNCTION__."@".__LINE__, 'BAN_03', 'LAN_AUDIT_LOG_003', $query, FALSE, LOG_TO_ROLLING);
 
 			if($this->debug)
 			{
@@ -1014,7 +1014,7 @@ class eIPHandler
 		}
 
 
-		//$admin_log->e_log_event(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","No ban found",$query,FALSE,LOG_TO_ROLLING);
+		//$admin_log->addEvent(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","No ban found",$query,FALSE,LOG_TO_ROLLING);
 		return true; 		// Email address OK
 	}
 
@@ -1071,19 +1071,19 @@ class eIPHandler
 			
 			if ($banType >= eIPHandler::BAN_TYPE_WHITELIST)
 			{ // Got a whitelist entry for this
-				//$admin_log->e_log_event(4, __FILE__."|".__FUNCTION__."@".__LINE__, "BANLIST_11", 'LAN_AL_BANLIST_11', $ban_ip, FALSE, LOG_TO_ROLLING);
+				//$admin_log->addEvent(4, __FILE__."|".__FUNCTION__."@".__LINE__, "BANLIST_11", 'LAN_AL_BANLIST_11', $ban_ip, FALSE, LOG_TO_ROLLING);
 				return FALSE;
 			}
 			return 1;		// Already in ban list
 		}
 		/*
 		// See if the address is in the whitelist
-		if ($sql->db_Select('banlist', '*', "`banlist_ip`='{$ban_ip}' AND `banlist_bantype` >= ".eIPHandler::BAN_TYPE_WHITELIST))
+		if ($sql->select('banlist', '*', "`banlist_ip`='{$ban_ip}' AND `banlist_bantype` >= ".eIPHandler::BAN_TYPE_WHITELIST))
 		{ // Got a whitelist entry for this
-			//$admin_log->e_log_event(4, __FILE__."|".__FUNCTION__."@".__LINE__, "BANLIST_11", 'LAN_AL_BANLIST_11', $ban_ip, FALSE, LOG_TO_ROLLING);
+			//$admin_log->addEvent(4, __FILE__."|".__FUNCTION__."@".__LINE__, "BANLIST_11", 'LAN_AL_BANLIST_11', $ban_ip, FALSE, LOG_TO_ROLLING);
 			return FALSE;
 		} */
-		if(vartrue($pref['enable_rdns_on_ban']))
+		if(!empty($pref['enable_rdns_on_ban']))
 		{
 			$ban_message .= 'Host: '.$this->get_host_name($ban_ip);
 		}
@@ -1182,9 +1182,9 @@ class eIPHandler
 				$msg = $name.': Insufficient permissions. Required: '.$this->permsToString($reqPerms).'  Actual: '.$this->permsToString($realPerms);
 			}
 		}
-		if ($message && $msg)
-		{	// Do something with the error message
-		}
+		//if ($message && $msg)
+	//	{	// Do something with the error message
+	//	}
 		return $result;
 	}
 
@@ -1243,9 +1243,9 @@ class eIPHandler
 					$bestRow = $row;
 					$gotBrowser = TRUE;
 				}
-				else
-				{	// Problem - two or more rows with same browser token. What to do?
-				}
+			//	else
+			//	{	// Problem - two or more rows with same browser token. What to do?
+			//	}
 			}
 			elseif ($row['user_ip'] == $ip)
 				{	// Just IP match here
@@ -1254,9 +1254,9 @@ class eIPHandler
 						$bestRow = $row;
 						$gotIP = TRUE;
 					}
-					else
-					{	// Problem - two or more rows with same IP address. Hopefully better offer later!
-					}
+					//else
+					//{	// Problem - two or more rows with same IP address. Hopefully better offer later!
+					//}
 				}
 		}
 		return $bestRow;
@@ -1553,11 +1553,11 @@ class banlistManager
 
 		$vals  = file($fileName);
 		if ($vals === FALSE) return $ret;
-		if (substr($vals[0], 0, 5) == '<?php')
+		if (strpos($vals[0], '<?php') === 0)
 		{
 			unset($vals[0]);
 		}
-		if (substr($vals[0], 0, 1) == ';') unset($vals[0]);
+		if (strpos($vals[0], ';') === 0) unset($vals[0]);
 		$numEntry = count($vals);
 		if ($start > $numEntry) return $ret;		// Empty return if beyond the end
 		if ($count == 0) return $vals;				// Special case - return the lot in ascending date order

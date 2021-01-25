@@ -24,7 +24,7 @@ class parseXml extends xmlClass // BC with v1.x
 	function __construct()
 	{
 		$data = debug_backtrace(true);
-		$log = e107::getAdminLog();
+		$log = e107::getLog();
 		$log->addDebug('Deprecated XML Parser Used');
 		
 		$log->addArray($data);
@@ -50,7 +50,7 @@ class parseXml extends xmlClass // BC with v1.x
 	
 	function parseXmlContents ()
 	{
-		$log = e107::getAdminLog();
+		$log = e107::getLog();
 		
 		foreach($this -> xmlData as $key => $value)
 		{
@@ -1261,7 +1261,7 @@ class xmlClass
 
 
 
-		if(vartrue($xmlArray['database']))
+		if(!empty($xmlArray['database']))
 		{
 			foreach($xmlArray['database']['dbTable'] as $val)
 			{

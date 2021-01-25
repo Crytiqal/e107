@@ -14,7 +14,7 @@ if(!empty($_POST) && !isset($_POST['e-token']))
 {
 	$_POST['e-token'] = '';
 }
-require_once("../class2.php");
+require_once(__DIR__.'/../class2.php');
 
 if (!getperms("T")) 
 {
@@ -44,11 +44,11 @@ if (isset($_POST['metasubmit']))
 		$meta_author[$lan] = $pref['meta_author'][$lan];
 	}
 
-	$meta_tag[e_LANGUAGE] = strip_if_magic(rtrim($_POST['meta']));
-	$meta_diz[e_LANGUAGE] = strip_if_magic(rtrim($_POST['meta_description']));
-	$meta_keywords[e_LANGUAGE] = strip_if_magic(rtrim($_POST['meta_keywords']));
-	$meta_copyright[e_LANGUAGE] = strip_if_magic(rtrim($_POST['meta_copyright']));
-	$meta_author[e_LANGUAGE] = strip_if_magic(rtrim($_POST['meta_author']));
+	$meta_tag[e_LANGUAGE] = rtrim($_POST['meta']);
+	$meta_diz[e_LANGUAGE] = rtrim($_POST['meta_description']);
+	$meta_keywords[e_LANGUAGE] = rtrim($_POST['meta_keywords']);
+	$meta_copyright[e_LANGUAGE] = rtrim($_POST['meta_copyright']);
+	$meta_author[e_LANGUAGE] = rtrim($_POST['meta_author']);
 
     $pref['meta_news_summary'] = intval($_POST['meta_news_summary']);
 	$pref['meta_tag'] = $meta_tag;
@@ -66,11 +66,12 @@ if (isset($_POST['metasubmit']))
 	save_prefs();
 }
 
-$meta 			= vartrue($pref['meta_tag']);
-$meta_diz 		= vartrue($pref['meta_description']);
-$meta_keywords 	= vartrue($pref['meta_keywords']);
-$meta_copyright = vartrue($pref['meta_copyright']);
-$meta_author 	= vartrue($pref['meta_author']);
+$meta 			= vartrue($pref['meta_tag'], array());
+$meta_diz 		= vartrue($pref['meta_description'], array());
+$meta_keywords 	= vartrue($pref['meta_keywords'], array());
+$meta_copyright = vartrue($pref['meta_copyright'], array());
+$meta_author 	= vartrue($pref['meta_author'], array());
+
 
 
 $text = "
@@ -86,32 +87,32 @@ $text = "
 					<tr>
 						<td>".LAN_DESCRIPTION."</td>
 						<td>";
-						$text .= $frm->textarea('meta_description',$tp->toForm($meta_diz[e_LANGUAGE]),3,80, array('size'=>'xxlarge'));
+						$text .= $frm->textarea('meta_description',$tp->toForm(varset($meta_diz[e_LANGUAGE])),3,80, array('size'=>'xxlarge'));
 					//	$text .= "<textarea class='tbox textarea e-autoheight' id='meta_description' name='meta_description' cols='70' rows='4'>".$tp->toForm(varset($meta_diz[e_LANGUAGE]))."</textarea>";
 						$text .= "</td>
 					</tr>
 					<tr>
 						<td>".LAN_KEYWORDS."</td>
 						<td>";
-						$text .= $frm->tags('meta_keywords',$tp->toForm($meta_keywords[e_LANGUAGE]));
+						$text .= $frm->tags('meta_keywords',$tp->toForm(varset($meta_keywords[e_LANGUAGE])));
 					//	$text .= "<textarea class='tbox textarea e-autoheight' id='meta_keywords' name='meta_keywords' cols='70' rows='4'>".$tp->toForm(varset($meta_keywords[e_LANGUAGE]))."</textarea>";
 						
 						$text .= "</td>
 					</tr>
 					<tr>
 						<td>".LAN_COPYRIGHT."</td>
-						<td><input class='tbox form-control input-xxlarge' size='70' type='text' name='meta_copyright' value=\"".$meta_copyright[e_LANGUAGE]."\" /></td>
+						<td><input class='tbox form-control input-xxlarge' size='70' type='text' name='meta_copyright' value=\"".varset($meta_copyright[e_LANGUAGE])."\" /></td>
 					</tr>
 
 					<tr>
 						<td>".LAN_AUTHOR."</td>
-						<td><input class='tbox form-control input-xxlarge' size='70' type='text' name='meta_author' value=\"".$meta_author[e_LANGUAGE]."\" /></td>
+						<td><input class='tbox form-control input-xxlarge' size='70' type='text' name='meta_author' value=\"".varset($meta_author[e_LANGUAGE])."\" /></td>
 					</tr>
 
 					<tr>
 						<td>".METLAN_1."</td>
 						<td>";
-						$text .= $frm->textarea('meta',str_replace("<","&lt;",$tp->toForm($meta[e_LANGUAGE])),5,100,'size=block-level');
+						$text .= $frm->textarea('meta',str_replace("<","&lt;",$tp->toForm(varset($meta[e_LANGUAGE]))),5,100,'size=block-level');
 						
 						$text .= "<span class='field-help'>".METLAN_2."</span>";
 						
@@ -132,7 +133,7 @@ $text = "
 			<div class='buttons-bar center'>".
 				$frm->admin_button('metasubmit','no-value','update', LAN_UPDATE)."
 			</div>
-			<input type='hidden' name='e-token' value='".e_TOKEN."' />
+			<input type='hidden' name='e-token' value='".defset('e_TOKEN')."' />
 		</fieldset>
 	</form>
 ";
@@ -141,4 +142,3 @@ $ns->tablerender(METLAN_00." (".e_LANGUAGE.")", $mes->render().$text);
 
 require_once("footer.php");
 
-?>

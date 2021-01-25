@@ -12,6 +12,7 @@
 
 if (!defined('e107_INIT')) { exit; }
 
+e107::coreLan('user');
 
 class user_shortcodes extends e_shortcode
 {
@@ -165,7 +166,7 @@ class user_shortcodes extends e_shortcode
 		$pref = e107::getPref();
 
 		$ldata = e107::getRank()->getRanks($this->var['user_id']); //, (USER && $forum->isModerator(USERID)));
-		if(vartrue($ldata['special']))
+		if(!empty($ldata['special']))
 		{
 			$r = $ldata['special'];
 		}
@@ -211,16 +212,22 @@ class user_shortcodes extends e_shortcode
 		
 	function sc_user_realname_icon($parm='')
 	{
+		$ret = '';
+
 		if(defined("USER_REALNAME_ICON"))
 		{
-			return USER_REALNAME_ICON;
+			$ret = USER_REALNAME_ICON;
 		}
-		if(file_exists(THEME."images/user_realname.png"))
+		elseif(file_exists(THEME."images/user_realname.png"))
 		{
-			return "<img src='".THEME_ABS."images/user_realname.png' alt='' style='vertical-align:middle;' /> ";
+			$ret = "<img src='".THEME_ABS."images/user_realname.png' alt='' style='vertical-align:middle;' /> ";
 		}
-		
-		return "<img src='".e_IMAGE_ABS."user_icons/user_realname_".IMODE.".png' alt='' style='vertical-align:middle;' /> ";
+		elseif(defined('IMODE') && file_exists( e_IMAGE."user_icons/user_realname_".IMODE.".png"))
+		{
+			$ret = "<img src='".e_IMAGE_ABS."user_icons/user_realname_".IMODE.".png' alt='' style='vertical-align:middle;' /> ";
+		}
+
+		return $ret;
 	}
 	
 	
@@ -419,7 +426,7 @@ class user_shortcodes extends e_shortcode
 
 	function sc_user_birthday($parm='')
 	{
-		if ($this->var['user_birthday'] != "" && $this->var['user_birthday'] != "0000-00-00" && preg_match("/([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})/", $this->var['user_birthday'], $regs))
+		if(!empty($this->var['user_birthday']) && $this->var['user_birthday'] != "0000-00-00" && preg_match("/([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})/", $this->var['user_birthday'], $regs))
 		{
 			return "$regs[3].$regs[2].$regs[1]";
 		}
@@ -430,14 +437,13 @@ class user_shortcodes extends e_shortcode
 	}
 
 
-	function sc_user_signature($parm) 
+	function sc_user_signature($parm=null)
 	{
-		$tp = e107::getParser();
-		return $this->var['user_signature'] ? $tp->toHTML($this->var['user_signature'], TRUE) : "";
+		return !empty($this->var['user_signature']) ? e107::getParser()->toHTML($this->var['user_signature'], TRUE) : null;
 	}
 
 
-	function sc_user_comments_link($parm) 
+	function sc_user_comments_link($parm=null)
 	{
 		if($this->commentsDisabled)
 		{
@@ -447,14 +453,14 @@ class user_shortcodes extends e_shortcode
 	}
 
 
-	function sc_user_forum_link($parm) 
+	function sc_user_forum_link($parm=null)
 	{
 		$user_forumposts = e107::getDb()->count("forum_thread","(*)","where thread_user=".$this->var['user_id']);
 		return $user_forumposts ? "<a href='".e_HTTP."userposts.php?0.forums.".$this->var['user_id']."'>".LAN_USER_37."</a>" : "";
 	}
 
 	
-	function sc_user_sendpm($parm) 
+	function sc_user_sendpm($parm=null)
 	{
 		$pref = e107::getPref();
 		$tp = e107::getParser();
@@ -465,7 +471,7 @@ class user_shortcodes extends e_shortcode
 	}
 
 
-	function sc_user_rating($parm='') 
+	function sc_user_rating($parm=null)
 	{
 		$pref = e107::getPref();
 		$frm = e107::getForm();
@@ -511,7 +517,7 @@ class user_shortcodes extends e_shortcode
 	}
 
 	
-	function sc_user_update_link($parm) 
+	function sc_user_update_link($parm=null)
 	{
 		$label = null;
 
@@ -562,14 +568,13 @@ class user_shortcodes extends e_shortcode
 		$url = e107::getUrl();
 		if(!$userjump = e107::getRegistry('userjump'))
 		{
-		//  $sql->db_Select("user", "user_id, user_name", "`user_id` > ".intval($this->var['user_id'])." AND `user_ban`=0 ORDER BY user_id ASC LIMIT 1 ");
 		  $sql->gen("SELECT user_id, user_name FROM `#user` FORCE INDEX (PRIMARY) WHERE `user_id` > ".intval($this->var['user_id'])." AND `user_ban`=0 ORDER BY user_id ASC LIMIT 1 ");
 		  if ($row = $sql->fetch())
 		  {
 			$userjump['next']['id'] = $row['user_id'];
 			$userjump['next']['name'] = $row['user_name'];
 		  }
-		//  $sql->db_Select("user", "user_id, user_name", "`user_id` < ".intval($this->var['user_id'])." AND `user_ban`=0 ORDER BY user_id DESC LIMIT 1 ");
+
 		  $sql->gen("SELECT user_id, user_name FROM `#user` FORCE INDEX (PRIMARY) WHERE `user_id` < ".intval($this->var['user_id'])." AND `user_ban`=0 ORDER BY user_id DESC LIMIT 1 ");
 		  if ($row = $sql->fetch())
 		  {
@@ -599,7 +604,7 @@ class user_shortcodes extends e_shortcode
 	}
 	
 
-	function sc_user_photo($parm)
+	function sc_user_photo($parm=null)
 	{
 		$row = array('user_image'=>$this->var['user_sess']);
 
@@ -607,7 +612,7 @@ class user_shortcodes extends e_shortcode
 	}
 
 	
-	function sc_user_picture($parm) 
+	function sc_user_picture($parm=null)
 	{
 		return e107::getParser()->toAvatar($this->var, $parm);
 
@@ -629,7 +634,7 @@ class user_shortcodes extends e_shortcode
 	/*  sc_USER_AVATAR - see single/user_avatar.php */ 
 		
 		
-	function sc_user_picture_name($parm) 
+	function sc_user_picture_name($parm=null)
 	{
 		if (ADMIN && getperms("4"))
 		{
@@ -638,7 +643,7 @@ class user_shortcodes extends e_shortcode
 	}
 	
 	
-	function sc_user_picture_delete($parm) 
+	function sc_user_picture_delete($parm=null)
 	{
 		if (USERID == $this->var['user_id'] || (ADMIN && getperms("4")))
 		{
@@ -661,9 +666,10 @@ class user_shortcodes extends e_shortcode
 	function sc_user_userclass_icon($parm = null)
 	{
 		$icons 	= array();
-		$i 		= 0; 
+		$i 		= 0;
+		$amount = 0;
 
-		if($parm['amount'])
+		if(isset($parm['amount']))
 		{
 			$amount	= intval($parm['amount']);
 		}
@@ -733,7 +739,7 @@ class user_shortcodes extends e_shortcode
 	}
 
 
-	function sc_user_extended_all($parm) 
+	function sc_user_extended_all($parm=null)
 	{
 		$sql = e107::getDb();
 		$tp = e107::getParser();
@@ -758,13 +764,11 @@ class user_shortcodes extends e_shortcode
 		";
 		*/
 
-		require_once(e_HANDLER."user_extended_class.php");
-		
-		$ue = new e107_user_extended;
+		$ue = e107::getUserExt();
 		$ueCatList = $ue->user_extended_get_categories();
 		$ueFieldList = $ue->user_extended_get_fields();
-		
-		
+
+
 		
 		$ueCatList[0][0] = array('user_extended_struct_name' => LAN_USER_44, 'user_extended_struct_text' => '');
 		
@@ -774,11 +778,11 @@ class user_shortcodes extends e_shortcode
 		foreach($ueCatList as $catnum => $cat)
 		{
 			$key = $cat[0]['user_extended_struct_text'] ? $cat[0]['user_extended_struct_text'] : $cat[0]['user_extended_struct_name'];
-			$cat_name = $tp->parseTemplate("{USER_EXTENDED={$key}.text.{$this->var['user_id']}}", TRUE); //XXX FIXME Fails
+		//	$cat_name = $tp->parseTemplate("{USER_EXTENDED={$key}.text.{$this->var['user_id']}}", TRUE); //XXX FIXME Fails
+
+		//	$cat_name = true; //XXX TEMP Fix.
 			
-			$cat_name = true; //XXX TEMP Fix. 
-			
-			if($cat_name != FALSE && isset($ueFieldList[$catnum]) && count($ueFieldList[$catnum]))
+			if(/*$cat_name != FALSE && */isset($ueFieldList[$catnum]) && count($ueFieldList[$catnum]))
 			{
 					
 				$ret .= str_replace("{EXTENDED_NAME}", $key, $EXTENDED_CATEGORY_START);
@@ -818,7 +822,7 @@ class user_shortcodes extends e_shortcode
 	}
 
 
-	function sc_profile_comments($parm) 
+	function sc_profile_comments($parm=null)
 	{
 		if(!e107::getPref('profile_comments'))
 		{
@@ -829,8 +833,11 @@ class user_shortcodes extends e_shortcode
 
 		//	return e107::getRender()->tablerender($ret['caption'],$ret['comment_form']. $ret['comment'], 'profile_comments', TRUE);
 	}
-	
-	
+
+	/**
+	 * @deprecated
+	 * @param string $parm
+	 */
 	function sc_profile_comment_form($parm='') // deprecated. 
 	{
 		return;
@@ -838,14 +845,14 @@ class user_shortcodes extends e_shortcode
 	
 	
 	
-	function sc_total_users($parm='') 
+	function sc_total_users($parm=null)
 	{
 		global $users_total;
-		return $users_total;
+		return (int) $users_total;
 	}
 	
 	
-	function sc_user_form_records($parm='') 
+	function sc_user_form_records($parm=null)
 	{
 		global $records;
 
@@ -854,7 +861,7 @@ class user_shortcodes extends e_shortcode
 	}
 	
 
-	function sc_user_form_order($parm) 
+	function sc_user_form_order($parm=null)
 	{
 		global $order;
 
@@ -876,7 +883,7 @@ class user_shortcodes extends e_shortcode
 	}
 	
 	
-	function sc_user_form_start($parm) 
+	function sc_user_form_start($parm=null)
 	{
 		global $from;
 
@@ -888,19 +895,19 @@ class user_shortcodes extends e_shortcode
 	
 	
 	
-	function sc_user_form_end($parm) 
+	function sc_user_form_end($parm=null)
 	{
 		return "</form>";
 	}
 
 
-	function sc_user_form_submit($parm) 
+	function sc_user_form_submit($parm=null)
 	{
 		return "<input class='btn btn-default btn-secondary button' type='submit' name='submit' value='".LAN_GO."' />";
 	}
 
 
-	function sc_user_addons($parm='')
+	function sc_user_addons($parm=null)
 	{
 		$template 	= e107::getCoreTemplate('user','addon');
 		$tp 		= e107::getParser();
@@ -936,7 +943,7 @@ class user_shortcodes extends e_shortcode
 	/**
 	 * @Deprecated Use {USER_ADDONS} instead. 
 	 */
-	function sc_user_embed_userprofile($parm='') 
+	function sc_user_embed_userprofile($parm=null)
 	{
 		return $this->sc_user_addons($parm);
 		//if no parm, it means we render ALL embedded contents
@@ -1015,7 +1022,7 @@ class user_shortcodes extends e_shortcode
 	}
 	
 	
-	function sc_user_customtitle($parm) 
+	function sc_user_customtitle($parm=null)
 	{
 		return $this->var['user_customtitle'];
 	}

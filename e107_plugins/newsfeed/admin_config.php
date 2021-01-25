@@ -10,7 +10,7 @@
 
 // Generated e107 Plugin Admin Area
 
-require_once('../../class2.php');
+require_once(__DIR__.'/../../class2.php');
 if (!getperms('P') || !e107::isInstalled('newsfeed'))
 {
 	e107::redirect('admin');
@@ -342,4 +342,4 @@ require_once(e_ADMIN."auth.php");
 e107::getAdminUI()->runPage();
 
 require_once(e_ADMIN."footer.php");
-exit;
+

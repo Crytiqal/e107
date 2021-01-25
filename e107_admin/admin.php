@@ -8,8 +8,9 @@
  *
  */
 
-require_once('../class2.php');
+define('e_ADMIN_HOME', true); // used by some admin shortcodes and class2.
 
+require_once(__DIR__.'/../class2.php');
 
 if(varset($_GET['mode']) == 'customize')
 {
@@ -34,12 +35,14 @@ if($info = e107::getLibrary()->load('bootstrap'))
     }
 }
 
-include_once(e107::coreTemplatePath('admin_icons')); // Needs to be loaded before infopanel AND in boot.php 
+e107::getDebug()->logTime('[admin.php: Loading admin_icons]');
+//include_once(e107::coreTemplatePath('admin_icons'));
+e107::loadAdminIcons(); // Needs to be loaded before infopanel AND in boot.php
 
-if(vartrue($_GET['iframe']) == 1)
+/*if(vartrue($_GET['iframe']) == 1)
 {
 	define('e_IFRAME', true);
-}
+}*/
 
 
 
@@ -70,10 +73,11 @@ if(in_array($pref['adminstyle'], array('infopanel', 'flexpanel')))
 //e107::getSession()->clear('addons-update-status');
 //e107::getSession()->set('addons-update-checked',false); // set to recheck it.
 
-define('e_ADMIN_HOME', true); // used by some admin shortcodes.
+
 
 require_once(e_ADMIN.'boot.php');
 require_once(e_HANDLER.'upload_handler.php');
+
 new admin_start;
 
 require_once(e_ADMIN.'auth.php');
@@ -138,7 +142,7 @@ class admin_start
 
 		// Files that can cause comflicts and problems.
         $fileInspector = e107::getFileInspector();
-		$this->deprecated = $fileInspector->insecureFiles;
+		$this->deprecated = $fileInspector::getCachedDeprecatedFiles();
 
 		$this->checkCoreVersion();
 
@@ -257,7 +261,7 @@ class admin_start
 
 		require(e_ADMIN."ver.php");
 
-		if(!empty($e107info['e107_version']) && (e_VERSION !==  $e107info['e107_version']))
+		if(!empty($e107info['e107_version']) && defined('e_VERSION') && (e_VERSION !==  $e107info['e107_version']))
 		{
 			e107::getConfig()->set('version', $e107info['e107_version'])->save(false,true,false);
 
@@ -785,7 +789,7 @@ function render_clean() // still used by classis, tabbed etc.
 {
 	global $td;
 	$text = "";
-	while ($td <= ADLINK_COLS)
+	while ($td <= defset('ADLINK_COLS', 5))
 	{
 		$text .= "<td class='td' style='width:20%;'></td>";
 		$td++;
@@ -797,7 +801,7 @@ function render_clean() // still used by classis, tabbed etc.
 
 
 
-if(is_object($adp))
+if(isset($adp) && is_object($adp))
 {
 	$adp->render();
 }
@@ -874,4 +878,4 @@ function log_request()
 
 require_once("footer.php");
 
-?>
+

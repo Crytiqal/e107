@@ -17,7 +17,7 @@
 $eplug_admin = true;
 define('DOWNLOAD_DEBUG',FALSE);
 
-require_once("../../class2.php");
+require_once(__DIR__.'/../../class2.php');
 if (!getperms("P") || !e107::isInstalled('download'))
 {
 	e107::redirect('admin');
@@ -142,10 +142,17 @@ if (isset($_POST['updatedownlaodoptions']))
 if (isset($_POST['updateuploadoptions']))
 {
 	unset($temp);
-	$temp['upload_enabled'] = intval($_POST['upload_enabled']);
+/*	$temp['upload_enabled'] = intval($_POST['upload_enabled']);
 	$temp['upload_maxfilesize'] = $_POST['upload_maxfilesize'];
-	$temp['upload_class'] = intval($_POST['upload_class']);
-	if ($admin_log->logArrayDiffs($temp, $pref, 'DOWNL_02'))
+	$temp['upload_class'] = intval($_POST['upload_class']);*/
+
+	$cfg = e107::getConfig();
+	$cfg->set('upload_enabled', (int) $_POST['upload_enabled']);
+	$cfg->set('upload_maxfilesize', $_POST['upload_maxfilesize']);
+	$cfg->set('upload_class', (int) $_POST['upload_class']);
+	$cfg->save(true, true, true);
+
+	/*if ($admin_log->logArrayDiffs($temp, $pref, 'DOWNL_02'))
 	{
 		save_prefs();
 		$message = DOWLAN_65;
@@ -153,7 +160,7 @@ if (isset($_POST['updateuploadoptions']))
 	else
 	{
 		$message = DOWLAN_8;
-	}
+	}*/
 }
 
 $targetFields = array('gen_datestamp', 'gen_user_id', 'gen_ip', 'gen_intdata', 'gen_chardata');		// Fields for download limits
@@ -239,6 +246,6 @@ require_once(e_ADMIN."auth.php");
 //download/includes/admin.php is auto-loaded. 
  e107::getAdminUI()->runPage();
 require_once(e_ADMIN."footer.php");
-exit;
+
 
 

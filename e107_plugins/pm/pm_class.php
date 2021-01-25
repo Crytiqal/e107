@@ -111,6 +111,7 @@ class private_message
 	 */
 	function add($vars)
 	{
+
 		$tp = e107::getParser();
 		$sql = e107::getDb();
 		$pmsize = 0;
@@ -183,7 +184,7 @@ class private_message
 		{
 			if(!empty($vars['pm_userclass']))
 			{
-				$toclass = e107::getUserClass()->uc_get_classname($vars['pm_userclass']);
+				$toclass = e107::getUserClass()->getName($vars['pm_userclass']);
 				$tolist = $this->get_users_inclass($vars['pm_userclass']);
 				$ret .= LAN_PM_38.": {$toclass}<br />";
 				$class = TRUE;
@@ -200,7 +201,7 @@ class private_message
 				$totalSend = count($tolist);
 				$targets = array_chunk($tolist, $maxSendNow);		// Split into a number of lists, each with the maximum number of elements (apart from the last block, of course)
 				unset($tolist);
-				$array = new ArrayData;
+
 				$pmInfo = $info;
 				$genInfo = array(
 					'gen_type' => 'pm_bulk',
@@ -212,7 +213,7 @@ class private_message
 				{	// Save the list in the 'generic' table
 					$pmInfo['to_array'] = $targets[$i];			// Should be in exactly the right format
 					$genInfo['gen_intdata'] = count($targets[$i]);
-					$genInfo['gen_chardata'] = $array->WriteArray($pmInfo,TRUE);
+					$genInfo['gen_chardata'] = e107::serialize($pmInfo,TRUE);
 					$sql->insert('generic', array('data' => $genInfo, '_FIELD_TYPES' => array('gen_chardata' => 'string')));	// Don't want any of the clever sanitising now
 				}
 				$toclass .= ' ['.$totalSend.']';
@@ -623,7 +624,7 @@ class private_message
 		}
 		else
 		{
-			$var = strip_if_magic($var);
+		//	$var = strip_if_magic($var);
 			$var = str_replace("'", '&#039;', trim($var));		// Display name uses entities for apostrophe
 			$where = "user_name LIKE '".$sql->escape($var, FALSE)."'";
 		}
@@ -851,10 +852,14 @@ class private_message
 
 		@set_time_limit(10 * 60);
 		@ini_set("max_execution_time", 10 * 60);
-		while (@ob_end_clean()); // kill all output buffering else it eats server resources
+		while (ob_get_length() !== false)  // destroy all ouput buffering
+		{
+	        ob_end_clean();
+		}
+
 		if (connection_status() == 0)
 		{
-			if (strstr($_SERVER['HTTP_USER_AGENT'], "MSIE")) {
+			if (strpos($_SERVER['HTTP_USER_AGENT'], "MSIE") !== false) {
 				$file = preg_replace('/\./', '%2e', $file, substr_count($file, '.') - 1);
 			}
 			if (isset($_SERVER['HTTP_RANGE']))

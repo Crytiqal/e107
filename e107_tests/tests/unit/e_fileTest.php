@@ -128,12 +128,26 @@ class e_fileTest extends \Codeception\Test\Unit
 			{
 
 			}
-
+*/
 			public function testFile_size_encode()
 			{
+				$arr = array(
+					'1&nbsp;kB'   => 1024,
+					'2&nbsp;kB'   => 2048,
+					'1&nbsp;MB'   => 1048576,
+					'1&nbsp;GB'   => 1073741824,
+					'1&nbsp;TB'   => 1099511627776,
+				);
+
+				foreach($arr as $expected => $bytes)
+				{
+					$result = $this->fl->file_size_encode($bytes);
+					$this->assertSame($expected, $result);
+
+				}
 
 			}
-
+/*
 			public function testMkDir()
 			{
 
@@ -163,12 +177,14 @@ class e_fileTest extends \Codeception\Test\Unit
 			{
 
 			}
-
+*/
 			public function testGet_dirs()
 			{
-
+				$actual = $this->fl->get_dirs(e_LANGUAGEDIR);
+				$expected = array (  0 => 'English' );
+				$this->assertSame($expected, $actual);
 			}
-
+/*
 			public function testGetErrorMessage()
 			{
 
@@ -387,12 +403,33 @@ class e_fileTest extends \Codeception\Test\Unit
 			{
 
 			}
-
+*/
 			public function testGet_files()
 			{
+				$reject = array('style.*');
+				$result = $this->fl->get_files(e_THEME."voux/", "\.php|\.css|\.xml|preview\.jpg|preview\.png", $reject, 1);
+
+				$files = array();
+				foreach($result as $f)
+				{
+					$files[] = $f['fname'];
+				}
+
+	     		$this->assertContains('install.xml', $files); // 1 level deep.
+	     		$this->assertContains('theme.php', $files);
+	     		$this->assertContains('theme.xml', $files);
+				$this->assertNotContains('style.css', $files);
+
+
+				// test folder with ony a folder inside. (no files)
+				$publicFilter = array('_FT', '^thumbs\.db$','^Thumbs\.db$','.*\._$','^\.htaccess$','^\.cvsignore$','^\.ftpquota$','^index\.html$','^null\.txt$','\.bak$','^.tmp'); // Default file filter (regex format)
+				$result = $this->fl->get_files(e_DOCS,'',$publicFilter);
+				$expected = array();
+
+				$this->assertSame($expected, $result);
 
 			}
-
+/*
 			public function testGetUserDir()
 			{
 

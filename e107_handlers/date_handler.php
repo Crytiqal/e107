@@ -94,7 +94,7 @@ class e_date
 			return $marray;
 		}	
 		
-		if(substr($type,0,3) == 'day')
+		if(strpos($type, 'day') === 0)
 		{
 			$days = array();
 			for ($i=2; $i < 9; $i++) 
@@ -140,6 +140,8 @@ class e_date
 	 */
 	function convert_date($datestamp, $mask = '')
 	{
+		$datestamp = (int) $datestamp;
+
 		if(empty($mask))
 		{
 			$mask = 'long';
@@ -217,6 +219,8 @@ class e_date
 	 */
 	function convert($string=null, $mask = 'inputdate')
 	{
+		trigger_error('<b>'.__METHOD__.' is deprecated.</b> Use $tp->toDate() instead.', E_USER_DEPRECATED); // NO LAN
+
 		if($string == null) return false;
 		return is_numeric($string) ? $this->convert_date($string, $mask) : $this->toTime($string, $mask);
 	}
@@ -552,7 +556,7 @@ class e_date
 			}
 			else
 			{
-				preg_match('#(\d{1,2})(?:\D(\d{1,2}))?(?:\D(\d{1,2})){0,1}#', $timeString, $timeVals);
+				preg_match('#(\d{1,2})(?:\D(\d{1,2}))?(?:\D(\d{1,2}))?#', $timeString, $timeVals);
 			}
 		}
 		elseif ($endDay)
@@ -593,7 +597,9 @@ class e_date
 	 */
 	function computeLapse($older_date, $newer_date = FALSE, $mode = FALSE, $show_secs = TRUE, $format = 'long') 
 	{
-		if($newer_date === false)
+		$older_date = (int) $older_date;
+
+		if(empty($newer_date))
 		{
 			$newer_date = time();
 		}
@@ -631,6 +637,8 @@ class e_date
 			'seconds'   => array($interval->s, $sec, $secs),
 		);
 
+
+
 		if($show_secs !== true)
 		{
 			unset($result['seconds']);
@@ -650,7 +658,7 @@ class e_date
 			if($format === 'short') { break; }
 		}
 
-		if(strpos($ret[0],$sec) !== false)
+		if(empty($ret) || strpos($ret[0],$sec) !== false)
 		{
 			$justNow = deftrue('LANDT_10',"Just now");
 			return $mode ? array($justNow) : $justNow;
@@ -779,6 +787,8 @@ class e_date
 	 */
 	public function strptime($str, $format)
 	{
+		trigger_error('<b>'.__METHOD__.' is deprecated.</b>  Use eShims::strptime() instead', E_USER_DEPRECATED); // NO LAN
+
 		$vals = eShims::strptime($str, $format); // PHP5 is more accurate than below.
 		$vals['tm_amon'] = strftime('%b', mktime(0, 0, 0, $vals['tm_mon'] + 1));
 		$vals['tm_fmon'] = strftime('%B', mktime(0, 0, 0, $vals['tm_mon'] + 1));

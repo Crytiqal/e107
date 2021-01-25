@@ -17,7 +17,7 @@ if(!empty($_POST) && !isset($_POST['e-token']))
 
 if (!defined('e107_INIT'))
 {
-	require_once("../class2.php");
+	require_once(__DIR__.'/../class2.php');
 }
 
 if (!getperms('4|U0|U1|U2|U3'))
@@ -466,7 +466,7 @@ class users_admin_ui extends e_admin_ui
 	}
 
 
-	public function afterDelete($deletedData, $id, $deleted_check)
+	public function afterDelete($deleted_data, $id, $deleted_check)
 	{
 		if(!empty($id))
 		{
@@ -477,7 +477,7 @@ class users_admin_ui extends e_admin_ui
 			e107::getCache()->clear('online_menu_member_total');
 
 			// Trigger admin_user_delete
-			e107::getEvent()->trigger('admin_user_delete', $deletedData);
+			e107::getEvent()->trigger('admin_user_delete', $deleted_data);
 		}
 
 	}
@@ -613,7 +613,7 @@ class users_admin_ui extends e_admin_ui
 
 		$vars = array('x'=>$sysuser->getId(), 'y'=> $sysuser->getName(), 'z'=> $sysuser->getValue('email'));
 
-		e107::getAdminLog()->log_event('USET_06', $tp->lanVars( USRLAN_162, $vars), E_LOG_INFORMATIVE);
+		e107::getLog()->add('USET_06', $tp->lanVars( USRLAN_162, $vars), E_LOG_INFORMATIVE);
 		e107::getMessage()->addSuccess("(".$sysuser->getId().".".$sysuser->getName()." - ".$sysuser->getValue('email').") ".USRLAN_9);
 		
 		// List data reload
@@ -629,7 +629,7 @@ class users_admin_ui extends e_admin_ui
 	{
 		$sql = e107::getDb();
 		$mes = e107::getMessage();
-		$admin_log = e107::getAdminLog();
+		$admin_log = e107::getLog();
 		$iph = e107::getIPHandler();
 		$tp = e107::getParser();
 		
@@ -690,7 +690,7 @@ class users_admin_ui extends e_admin_ui
 	public function ListVerifyTrigger($userid)
 	{
 		$e_event = e107::getEvent();
-		$admin_log = e107::getAdminLog();
+		$admin_log = e107::getLog();
 		$sysuser = e107::getSystemUser($userid, false);
 		$userMethods = e107::getUserSession();
 		$mes = e107::getMessage();
@@ -786,7 +786,7 @@ class users_admin_ui extends e_admin_ui
 			 // TODO - lan
 			$lan = 'Administrator --ADMIN_EMAIL-- (#--ADMIN_UID--, --ADMIN_NAME--) has logged in as the user --EMAIL-- (#--UID--, --NAME--)';
 			
-			e107::getLog()->log_event('USET_100', str_replace($search, $replace, $lan), E_LOG_INFORMATIVE);
+			e107::getLog()->add('USET_100', str_replace($search, $replace, $lan), E_LOG_INFORMATIVE);
 			
 			$eventData = array('user_id' => $sysuser->getId(), 'admin_id' => $user->getId());
 			e107::getEvent()->trigger('loginas', $eventData); // BC
@@ -814,7 +814,7 @@ class users_admin_ui extends e_admin_ui
 			 // TODO - lan
 			$lan = 'Administrator --ADMIN_EMAIL-- (#--ADMIN_UID--, --ADMIN_NAME--) has logged out as the user --EMAIL-- (#--UID--, --NAME--)';
 			
-			e107::getAdminLog()->log_event('USET_101', str_replace($search, $replace, $lan), E_LOG_INFORMATIVE);
+			e107::getLog()->add('USET_101', str_replace($search, $replace, $lan), E_LOG_INFORMATIVE);
 			
 			$eventData = array('user_id' => $sysuser->getId(), 'admin_id' => $user->getId());
 			e107::getEvent()->trigger('logoutas', $eventData); //BC 
@@ -855,7 +855,7 @@ class users_admin_ui extends e_admin_ui
 				'z' => $user->getValue('email')
 			);
 			
-			e107::getAdminLog()->log_event('USET_08', $tp->lanVars(USRLAN_244,$vars), E_LOG_INFORMATIVE);
+			e107::getLog()->add('USET_08', $tp->lanVars(USRLAN_244,$vars), E_LOG_INFORMATIVE);
 			$this->redirect('list', 'main', true);
 		}
 
@@ -869,7 +869,7 @@ class users_admin_ui extends e_admin_ui
 			{
 				$vars = array('x'=>$sysuser->getId(), 'y'=>$sysuser->getName(), 'z'=>$sysuser->getValue('email'));
 
-				e107::getAdminLog()->log_event('USET_09',$tp->lanVars(USRLAN_165, $vars), E_LOG_INFORMATIVE);
+				e107::getLog()->add('USET_09',$tp->lanVars(USRLAN_165, $vars), E_LOG_INFORMATIVE);
 				$mes->addSuccess($sysuser->getName()." (".$sysuser->getValue('email').") ".USRLAN_6);
 				$this->getTreeModel()->loadBatch(true);
 			}
@@ -895,7 +895,7 @@ class users_admin_ui extends e_admin_ui
 		$sql = e107::getDb();
 		$user = e107::getUser();
 		$sysuser = e107::getSystemUser($userid, false);
-		$admin_log = e107::getAdminLog();
+		$admin_log = e107::getLog();
 		$mes = e107::getMessage();
 		$tp = e107::getParser();
 		
@@ -990,7 +990,7 @@ class users_admin_ui extends e_admin_ui
 		$response = $this->getResponse();
 		$sysuser = e107::getSystemUser($userid, false);
 		
-		$admin_log = e107::getAdminLog();
+		$admin_log = e107::getLog();
 		$e_userclass = e107::getUserClass();
 		$sql = e107::getDb();
 
@@ -1057,7 +1057,7 @@ class users_admin_ui extends e_admin_ui
 				if ($messaccess == '') $messaccess = UCSLAN_12."\n";
 				
 				$message = USRLAN_256." ".$sysuser->getName().",\n\n".UCSLAN_4." ".SITENAME."\n( ".SITEURL." )\n\n".UCSLAN_5.": \n\n".$messaccess."\n".UCSLAN_10."\n".SITEADMIN;
-				//    $admin_log->e_log_event(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","User class change",str_replace("\n","<br />",$message),FALSE,LOG_TO_ROLLING);
+				//    $admin_log->addEvent(4,__FILE__."|".__FUNCTION__."@".__LINE__,"DBG","User class change",str_replace("\n","<br />",$message),FALSE,LOG_TO_ROLLING);
 				
 				$options['mail_subject'] = UCSLAN_2;
 				$options['mail_body'] = nl2br($message);
@@ -1392,7 +1392,7 @@ class users_admin_ui extends e_admin_ui
 		$mes 			= e107::getMessage();
 		$sql 			= e107::getDb();
 		$e_event 		= e107::getEvent();
-		$admin_log		= e107::getAdminLog();
+		$admin_log		= e107::getLog();
 		$pref = e107::getPref();
 		
 		if (!$_POST['ac'] == md5(ADMINPWCHANGE))
@@ -2236,10 +2236,10 @@ class users_admin_ui extends e_admin_ui
 							{
 								$usr_email = trim($result[0]);
 							}
-							if ($sql->db_Select('user','user_id, user_name, user_email',"user_email='".$usr_email."' "))
+							if ($sql->select('user','user_id, user_name, user_email',"user_email='".$usr_email."' "))
 							{
 								$row = $sql->fetch();
-								if ($sql->db_Update('user',"`user_email`='' WHERE `user_id` = '".$row['user_id']."' ") !== false)
+								if ($sql->update('user',"`user_email`='' WHERE `user_id` = '".$row['user_id']."' ") !== false)
 								{
 								// echo "Deleting user email {$row['user_email']} for user {$row['user_name']}, id={$row['user_id']}<br />";
 									$dodel = true;
@@ -2375,7 +2375,7 @@ class users_admin_ui extends e_admin_ui
 		// $bantype = 2;
 		// $ins = " AND user_join < ".strtotime("-30 days");
 	// }
-	// if ($sql->db_Select("user","user_id, user_name","user_ban= {$bantype}".$ins))
+	// if ($sql->select("user","user_id, user_name","user_ban= {$bantype}".$ins))
 	// {
 		// $uList = $sql->db_getList();
 		// foreach ($uList as $u)
@@ -2639,10 +2639,7 @@ class users_admin_form_ui extends e_admin_form_ui
 		if($controller->getMode() != 'main' || $controller->getAction() != 'list') return;
 		$row = $controller->getListModel()->getData();
 		
-		if(!getperms('4'))
-		{
-		//	return; 
-		}
+
 	
 		
 	//	extract($row);
@@ -2749,14 +2746,14 @@ class users_admin_form_ui extends e_admin_form_ui
 			$opts['usersettings'] = LAN_EDIT;
 		}
 
-		if ($row['user_perms'] == "0" && !getperms("0"))
-		{
+	//	if ($row['user_perms'] == "0" && !getperms("0"))
+	//	{
 		//	$text .= "";
-		}
-		elseif ($user_id != USERID || getperms("0"))
-		{
+	//	}
+	//	elseif ($user_id != USERID || getperms("0"))
+	//	{
 		//	$text .= "<option value='userclass'>".USRLAN_36."</option>\n"; // DEPRECATED. inline & batch should be enough. 
-		}
+	//	}
 		if ($row['user_perms'] != "0")
 		{
 		//	$text .= "<option value='deluser'>".LAN_DELETE."</option>\n";
@@ -2883,7 +2880,7 @@ class users_admin_form_ui extends e_admin_form_ui
 		//	natsort($imageList);
 		}
 
-		public function afterDelete($data, $id, $deleted_check)
+		public function afterDelete($deleted_data, $id, $deleted_check)
 		{
 			e107::getCache()->clear_sys('nomd5_user_ranks');
 		}

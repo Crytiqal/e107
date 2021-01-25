@@ -10,7 +10,7 @@
  *
 */
 
-require_once('../class2.php');
+require_once(__DIR__.'/../class2.php');
 
 if (!getperms('H|N|H0|H1|H2|H3|H4|H5'))
 {
@@ -398,10 +398,7 @@ class news_sub_form_ui extends e_admin_form_ui
 				$text .= "<a class='btn btn-default btn-secondary btn-large' title=\"".LAN_NEWS_96."\" href='".e_SELF."?mode=main&action=create&sub={$id}'>".ADMIN_EXECUTE_ICON."</a>";
 				// NWSLAN_103;	
 			} 
-			else // Already submitted; 
-			{
-				
-			}
+
 					
 			$text .= $this->submit_image('etrigger_delete['.$id.']', $id, 'delete', LAN_DELETE.' [ ID: '.$id.' ]', array('class' => 'btn btn-default btn-secondary btn-large action delete'));
 			$text .= "</div>";
@@ -968,7 +965,7 @@ class news_admin_ui extends e_admin_ui
 
 		if(e107::getConfig()->save(false))
 		{
-			e107::getAdminLog()->logArrayDiffs($temp, e107::getPref(), 'NEWS_06');
+			e107::getLog()->logArrayDiffs($temp, e107::getPref(), 'NEWS_06');
 			$this->clearCache();
 		}
 	}
@@ -1169,7 +1166,7 @@ class news_admin_ui extends e_admin_ui
 							<tr>
 								<td>".NWSLAN_120."</td>
 								<td>
-									".$frm->bbarea('news_subheader', stripcslashes(vartrue($pref['news_subheader'])), 2, 'helpb')."
+									".$frm->bbarea('news_subheader', stripcslashes(vartrue($pref['news_subheader'])), null, 'helpb')."
 								</td>
 							</tr>
 							</tbody>
@@ -1263,7 +1260,7 @@ class news_admin_ui extends e_admin_ui
 		if ($sql->select("submitnews", "*", "submitnews_id=".intval($id)))
 		{
 			$row = $sql->fetch();
-			$data['news_title'] = $tp->dataFilter($row['submitnews_title']);
+			$data['news_title'] = $tp->filter($row['submitnews_title']);
 			$data['news_body'] = $row['submitnews_item'];
 			$data['news_category'] = intval( $row['submitnews_category']);
 			$data['news_body'] .= "\n[[b]".NWSLAN_49." {$row['submitnews_name']}[/b]]";
@@ -1505,13 +1502,13 @@ class news_form_ui extends e_admin_form_ui
 		  <div class="tab-content">';
 
 
-		$val = strstr($curVal, "[img]http") ? $curVal : str_replace("[img]../", "[img]", $curVal);
+		$val = strpos($curVal, "[img]http") !== false ? $curVal : str_replace("[img]../", "[img]", $curVal);
 		$text .= "<div id='news-body-container' class='tab-pane active'>";
 		$text .= $frm->bbarea('news_body', $val, 'news', 'news', 'large');
 		$text .= "</div>";
 		$text .= "<div id='news-extended-container' class='tab-pane'>";
 
-		$val = (strstr($curValExt, "[img]http") ? $curValExt : str_replace("[img]../", "[img]",$curValExt));
+		$val = (strpos($curValExt, "[img]http") !== false ? $curValExt : str_replace("[img]../", "[img]",$curValExt));
 		$text .= $frm->bbarea('news_extended', $val, 'extended', 'news','large');
 
 		$text .= "</div>
@@ -1582,13 +1579,6 @@ class news_form_ui extends e_admin_form_ui
 			//	$text .= $frm->imagepicker('news_thumbnail[0]', $curval ,'','media=news&video=1');
 			$thumbTmp = explode(",",$curval);
 
-			foreach($thumbTmp as $key=>$path)
-			{
-				if(!empty($path) && (strpos($path, ",") == false) && $path[0] != "{" && $tp->isVideo($path) === false )//BC compat
-				{
-				//	$thumbTmp[$key] = "{e_IMAGE}newspost_images/".$path;
-				}
-			}
 
 			$text = "<div class='mediaselector-multi'>";
 			$text .= $frm->imagepicker('news_thumbnail[0]', varset($thumbTmp[0]), varset($paths[0]), array('media' => 'news+', 'video' => 1, 'legacyPath' => '{e_IMAGE}newspost_images'));
@@ -1633,4 +1623,4 @@ if(!e_AJAX_REQUEST)
 	 require_once("footer.php");
 }
 
-exit;
+

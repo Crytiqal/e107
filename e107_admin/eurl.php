@@ -10,7 +10,7 @@
  *
 */
 
-require_once('../class2.php');
+require_once(__DIR__.'/../class2.php');
 if (!getperms('K'))
 {
 	e107::redirect('admin');
@@ -359,7 +359,7 @@ class eurl_admin_ui extends e_admin_controller_ui
 			$admin = $obj->admin();
 			$labels = vartrue($admin['labels'], array());
 
-			$this->prefs['url_main_module']['writeParms'][$module] = vartrue($section['name'], eHelper::labelize($module));
+			$this->prefs['url_main_module']['writeParms'][$module] = eHelper::labelize($module); // vartrue($section['name'], eHelper::labelize($module));
 		}
 
 		ksort($this->prefs['url_main_module']['writeParms']);
@@ -700,7 +700,7 @@ class eurl_admin_ui extends e_admin_controller_ui
 	
 	/**
 	 * Set extended (UI) Form instance
-	 * @return e_admin_ui
+	 * @return eurl_admin_ui
 	 */
 	public function _setUI()
 	{
@@ -712,7 +712,7 @@ class eurl_admin_ui extends e_admin_controller_ui
 	
 	/**
 	 * Set Config object
-	 * @return e_admin_ui
+	 * @return eurl_admin_ui
 	 */
 	protected function _setConfig()
 	{
@@ -847,7 +847,7 @@ class eurl_admin_form_ui extends e_admin_form_ui
 				
 				$id = 'eurl-'.str_replace('_', '-', $obj->module).'-'.$index;
 				
-				$checked = varset($obj->current[$module]) == $location ? ' checked="checked"' : '';
+				$checked = (isset($obj->current[$module]) && $obj->current[$module] == $location) ? ' checked="checked"' : '';
 				
 				$path = eDispatcher::getConfigPath($module, $location, false);
 				if(!is_readable($path))
@@ -863,7 +863,7 @@ class eurl_admin_form_ui extends e_admin_form_ui
 				    
 
 				$label = vartrue($section['label'], $index == 0 ? LAN_EURL_DEFAULT : eHelper::labelize(ltrim(strstr($location, '/'), '/')));
-				$cssClass = $checked ? 'e-showme' : 'e-hideme';
+			//	$cssClass = $checked ? 'e-showme' : 'e-hideme';
 				$cssClass = 'e-hideme'; // always hidden for now, some interface changes could come after pre-alpha
 
 				 $exampleUrl = array();
@@ -875,14 +875,14 @@ class eurl_admin_form_ui extends e_admin_form_ui
 
 	                }
 				 }
-
+/*
                  if(strpos($path,'noid')!==false)
                 {
-               //     $exampleUrl .= "  &nbsp; &Dagger;";    //XXX Add footer - denotes more CPU required. ?
+                 $exampleUrl .= "  &nbsp; &Dagger;";    //XXX Add footer - denotes more CPU required. ?
                 }
-                
-                $selected = varset($obj->current[$module]) == $location ? "selected='selected'" : '';
-				$opt .= "<option value='{$location}' {$selected} >".$diz.": ".$exampleUrl[0]."</option>";
+ */
+                $selected = (isset($obj->current[$module]) && ($obj->current[$module] == $location)) ? "selected='selected'" : '';
+				$opt .= "<option value='{$location}' {$selected} >".$diz.": ".varset($exampleUrl[0])."</option>";
 
 				$info .= "<tr><td>".$label."
 					
@@ -909,10 +909,10 @@ class eurl_admin_form_ui extends e_admin_form_ui
                     <td><select name='eurl_config[$module]' class='form-control input-block-level'>".$opt."</select></td>
                     <td>";
 		
-			$bTable = ($admin['generate']['table']);
-			$bInput = $admin['generate']['input'];
-			$bOutput = $admin['generate']['output'];
-			$bPrimary = $admin['generate']['primary'];
+			$bTable = varset($admin['generate']['table']);
+			$bInput = varset($admin['generate']['input']);
+			$bOutput = varset($admin['generate']['output']);
+			$bPrimary = varset($admin['generate']['primary']);
 			
 		
 			$text .= (is_array($admin['generate'])) ? $frm->admin_button('rebuild['.$bTable.']', $bPrimary."::".$bInput."::".$bOutput,'delete', LAN_EURL_REBUILD) : "";	  

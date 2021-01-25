@@ -341,6 +341,9 @@ class UserHandler
 
 
 
+
+
+
 	/**
 	 * Detect Password Hash Algorythm type
 	 * @param string $hash - Password hash to analyse
@@ -362,7 +365,7 @@ class UserHandler
 			$num = PASSWORD_E107_MD5;
 			$name = 'md5';
 		}
-		elseif ((strlen($hash) === 35) && (substr($hash,0,3) == PASSWORD_E107_ID))
+		elseif ((strlen($hash) === 35) && (strpos($hash, PASSWORD_E107_ID) === 0))
 		{
 			$num = PASSWORD_E107_SALT;
 			$name = 'md5-salt';
@@ -491,6 +494,22 @@ class UserHandler
 		if ($this->passwordEmail) return TRUE;
 		return false;
 	}
+
+	public function newUserExpired($userjoined)
+	{
+		$new_user_period = (int) e107::getPref('user_new_period', 0);
+
+		if(empty($new_user_period))
+		{
+			return true;
+		}
+
+		$userjoined = (int) $userjoined;
+
+		return (time() > ($userjoined + ( $new_user_period)*86400));
+
+	}
+
 
 
 
@@ -687,6 +706,11 @@ class UserHandler
 	 */
 	public function makeUserCookie($lode,$autologin = false)
 	{
+		if(e107::isCli())
+		{
+			return true;
+		}
+
 		$cookieval = $lode['user_id'].'.'.md5($lode['user_password']);		// (Use extra md5 on cookie value to obscure hashed value for password)
 		if (e107::getPref('user_tracking') == 'session')
 		{
@@ -1072,7 +1096,7 @@ Following fields auto-filled in code as required:
 				{	// Only update if needed
 					$db->update('user', '`user_ban` = '.$newVal.', `user_email` = \'\' WHERE `user_id` = '.$row['user_id'].' LIMIT 1');
 					// Add to user audit log		TODO: Should we log to admin log as well?
-					$adminLog = e107::getAdminLog();
+					$adminLog = e107::getLog();
 					$adminLog->user_audit($logEvent, array('user_ban' => $newVal, 'user_email' => $row['user_email']), $row['user_id'], $row['user_loginname']);
 				}
 			}
@@ -1200,6 +1224,13 @@ class e_user_provider
 	 */
 	public static function getSupportedProviders()
 	{
+		$regId = 'core/e107/user/provider';
+
+		if($cached = e107::getRegistry($regId))
+		{
+			return $cached;
+		}
+
 		$providers = [];
 
 		try
@@ -1232,6 +1263,9 @@ class e_user_provider
 		}
 
 		sort($providers);
+
+		e107::setRegistry($regId, $providers);
+
 		return $providers;
 	}
 
@@ -1765,7 +1799,7 @@ class e_user_provider
             }
 
             unset($user['user_password']);
-            e107::getLog()->user_audit(USER_AUDIT_LOGIN, '', $user['user_id'], $user['user_name']);
+            e107::getLog()->user_audit(USER_AUDIT_LOGIN, null, $user['user_id'], $user['user_name']);
         }
     }
 }
@@ -1812,7 +1846,7 @@ class e_userperms
 
 		"1"	=> array(LAN_PREFS,E_16_PREFS, E_32_PREFS),			// Alter Site Preferences
 		"X"	=> array(LAN_SEARCH,E_16_SEARCH, E_32_SEARCH),		// Search
-		"I"	=> array(ADLAN_138,E_16_LINKS, E_32_LINKS),			// Post SiteLinks
+		"I"	=> array(LAN_NAVIGATION,E_16_LINKS, E_32_LINKS),			// Post SiteLinks
 		"8"	=> array(ADMSLAN_27,E_16_LINKS, E_32_LINKS),		// Oversee SiteLink Categories
 		"K"	=> array(ADLAN_159,E_16_EURL, E_32_EURL),			// Configure URLs
 
@@ -1966,12 +2000,12 @@ class e_userperms
 			$ret['core'] 		= $this->core_perms;
 			$ret['plugin']		= $this->plugin_perms;
 
-			if(vartrue($this->language_perms))
+			if(!empty($this->language_perms))
 			{
 				$ret['language'] = $this->language_perms;
 			}
 
-			if(vartrue($this->main_perms))
+			if(!empty($this->main_perms))
 			{
 				$ret['main'] = $this->main_perms;
 			}
@@ -1990,8 +2024,8 @@ class e_userperms
 		if(is_array($info))
 		{
 			$label		= $info[0];
-			$icon_16	= $info[1];
-			$icon_32	= $info[2];
+			$icon_16	= varset($info[1]);
+			$icon_32	= varset($info[2]);
 		}
 		elseif($info)
 		{

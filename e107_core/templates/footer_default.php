@@ -16,7 +16,7 @@ if (!defined('e107_INIT'))
 {
 	exit;
 }
-$In_e107_Footer = TRUE; // For registered shutdown function
+$GLOBALS['E107_IN_FOOTER'] = true; // For registered shutdown function
 
 $magicSC = e107::getRender()->getMagicShortcodes(); // support for {---TITLE---} etc.
 
@@ -69,6 +69,10 @@ if (varset($e107_popup) != 1)
 	//
 	if(!deftrue('e_IFRAME'))
     {
+		if(!isset($LAYOUT['_modal_']))
+		{
+			$LAYOUT['_modal_'] = '';
+		}
 
         $psc = array(
          '</body>'          => '',
@@ -78,7 +82,7 @@ if (varset($e107_popup) != 1)
          '{---FOOTER---}'   => $tp->parseTemplate('{FOOTER}',true)
         );
 
-	   parseheader($FOOTER, $psc);
+	   e107::renderLayout($FOOTER, $psc);
     }
     
 	$eTimingStop = microtime();
@@ -203,12 +207,15 @@ if (ADMIN && isset($queryinfo) && is_array($queryinfo))
 {
 	$c = 1;
 	$mySQLInfo = $sql->mySQLinfo;
-	echo "<div class='e-debug query-notice'><table class='fborder table table-striped table-bordered' style='width: 100%;'>
+	echo "<div class='e-debug query-notice'>
+	<h4>SQL</h4>
+	<table class='table table-striped table-bordered' style='width: 100%;'>
 		<tr>
-		<th class='fcaption' style='width: 5%;'>ID</th><th class='fcaption' style='width: 95%;'>SQL Queries</th>\n</tr>\n";
+		<th style='width: 5%;'>ID</th><th style='width: 95%;'>SQL Queries</th>\n</tr>\n";
 	foreach ($queryinfo as $infovalue)
 	{
-		echo "<tr>\n<td class='forumheader3' style='width: 5%;'>{$c}</td><td class='forumheader3' style='width: 95%;'>{$infovalue}</td>\n</tr>\n";
+		echo "<tr>\n<td style='width: 5%;'>{$c}</td>
+			<td style='width: 95%;'>{$infovalue}</td>\n</tr>\n";
 		$c++;
 	}
 	echo "</table></div>";
@@ -434,13 +441,16 @@ echo $page;
 
 
 
-unset($In_e107_Footer);
+$GLOBALS['E107_IN_FOOTER'] = false;
 
 
 // Clean session shutdown
-e107::getSession()->shutdown(); // moved from the top of footer_default.php to fix https://github.com/e107inc/e107/issues/1446 (session closing before page was complete)
-// Shutdown
-$e107->destruct();
-$e107_Clean_Exit=true;	// For registered shutdown function -- let it know all is well!
+if(!e107::isCli())
+{
+	e107::getSession()->shutdown(); // moved from the top of footer_default.php to fix https://github.com/e107inc/e107/issues/1446 (session closing before page was complete)
+	// Shutdown
+	$e107->destruct();
+}
 
+$GLOBALS['E107_CLEAN_EXIT'] = true;  	// For registered shutdown function -- let it know all is well!
 

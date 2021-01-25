@@ -10,7 +10,7 @@
  *
 */
 
-require_once ("../class2.php");
+require_once (__DIR__."/../class2.php");
 $theme = e107::getPref('sitetheme');
 define("EXPORT_PATH","{e_THEME}".$theme."/install/");
 
@@ -22,7 +22,7 @@ if(!getperms('0'))
 
 if(isset($_POST['back']))
 {
-	header("location: ".e_SELF);
+	e107::redirect(e_SELF);
 	exit();
 }
 
@@ -80,7 +80,10 @@ if(e_AJAX_REQUEST )
 {
 
 	session_write_close();
-	while (@ob_end_clean()); 
+	while (ob_get_length() !== false)  // destroy all ouput buffering
+	{
+        ob_end_clean();
+	}
 
 	if(varset($_GET['mode']) == 'backup') //FIXME - not displaying progress until complete. Use e-progress?
 	{
@@ -112,7 +115,7 @@ if(e_AJAX_REQUEST )
 		
 		echo DBLAN_62." <small>(".$dbfile.")</small>";
 
-		e107::getAdminLog()->addSuccess($zip." ".$dbfile, false)->save(DBLAN_63);
+		e107::getLog()->addSuccess($zip." ".$dbfile, false)->save(DBLAN_63);
 		
 	}
 	
@@ -541,10 +544,11 @@ class system_tools
 				$mes->addError($sql->getLastErrorText());
 				return false;
 			}
-			else
+/*			else
 			{
 				// $mes->addDebug($sql_table);
 			}
+*/
 		}	
 		
 		return true;

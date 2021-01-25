@@ -249,7 +249,7 @@ class e_jsmanager
 		$customJqueryUrls = e107::getPref('library-jquery-urls');
 		$this->_cache_enabled = e107::getPref('jscsscachestatus',false);
 		
-		if(vartrue($customJqueryUrls) && $this->_in_admin === false)
+		if(!empty($customJqueryUrls) && $this->_in_admin === false)
 		{
 			$this->_libraries['jquery'] = explode("\n", $customJqueryUrls);	
 		}
@@ -269,7 +269,7 @@ class e_jsmanager
 
 				if(!$this->libDisabled($id,$vis))
 				{
-					if(vartrue($this->_libraries[$id]))
+					if(!empty($this->_libraries[$id]))
 					{
 						foreach($this->_libraries[$id] as $path)
 						{
@@ -283,7 +283,7 @@ class e_jsmanager
 		}
 		$this->_dependence = null;
 	
-		if($vis != 'auto')
+		if($vis != 'auto') // TODO FIX ME - should it be in the loop above?
 		{
 			$this->checkLibDependence(null, $core);
 		}
@@ -948,11 +948,11 @@ class e_jsmanager
 			return $this;
 			
 		}
-		else
-		{
+		//else
+		//{
 			// echo $this->_dependence." :: ENABLED<br />";
 			 // echo $this->_dependence."::".$file_path." : DISABLED<br />";		
-		}
+	//	}
 		
 		
 
@@ -1249,8 +1249,8 @@ class e_jsmanager
 
 		if($return)
 		{
-			$ret = ob_get_contents();
-			ob_end_clean();
+			$ret = ob_get_clean();
+
 			return $ret;
 		}
 	}
@@ -1565,7 +1565,7 @@ class e_jsmanager
 	 */
 	private function addCache($type,$path)
 	{
-		if($this->_cache_enabled != true  || $this->isInAdmin() || substr($path,0,2) == '//' || strpos($path, 'wysiwyg.php')!==false )
+		if($this->_cache_enabled != true  || $this->isInAdmin() || strpos($path, '//') === 0 || strpos($path, 'wysiwyg.php')!==false )
 		{
 			return false;
 		}
@@ -1718,9 +1718,9 @@ class e_jsmanager
 	    $parts = preg_split(":[\\\/]:", $path); // split on known directory separators
 
 	    // resolve relative paths
-	    for ($i = 0; $i < count($parts); $i +=1)
+	    for ($i = 0, $iMax = count($parts); $i < $iMax; $i +=1)
 	    {
-	        if ($parts[$i] === "..")   // resolve ..
+	        if (isset($parts[$i]) && ($parts[$i] === ".."))   // resolve ..
 	        {
 	            if ($i === 0)
 	            {

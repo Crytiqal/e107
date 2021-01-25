@@ -749,7 +749,7 @@ class db_verify
 	{
 		$key = array_flip($tabl);
 		
-		if(substr($cur,0,4)=="lan_") // language table adjustment. 
+		if(strpos($cur,"lan_") === 0) // language table adjustment.
 		{
 			list($tmp,$lang,$cur) = explode("_",$cur,3);
 		}
@@ -773,7 +773,7 @@ class db_verify
 	function getFixQuery($mode, $table, $field, $sqlFileData, $engine = 'MyISAM' )
 	{
 
-		if(substr($mode,0,5)== 'index')
+		if(strpos($mode, 'index') === 0)
 		{
 			$fdata = $this->getIndex($sqlFileData);
 			$newval = $this->toMysql($fdata[$field],'index');
@@ -827,7 +827,7 @@ class db_verify
 	function runFix($fixArray='')
 	{
 		$mes  = e107::getMessage();
-		$log = e107::getAdminLog();
+		$log = e107::getLog();
 		
 		if(!is_array($fixArray))
 		{
@@ -904,7 +904,7 @@ class db_verify
 	//	print_a($sql_data);
 	//	$regex = "/CREATE TABLE `?([\w]*)`?\s*?\(([\s\w\+\-_\(\),'\. `]*)\)\s*(ENGINE|TYPE)\s*?=\s?([\w]*)[\w =]*;/i";
 
-		$regex = "/CREATE TABLE (?:IF NOT EXISTS )?`?([\w]*)`?\s*?\(([\s\w\+\-_\(\),:'\. `]*)\)\s*(ENGINE|TYPE)\s*?=\s?([\w]*)[\w =]*;/i";
+	//	$regex = "/CREATE TABLE (?:IF NOT EXISTS )?`?([\w]*)`?\s*?\(([\s\w\+\-_\(\),:'\. `]*)\)\s*(ENGINE|TYPE)\s*?=\s?([\w]*)[\w =]*;/i";
 
 		// also support non-alphanumeric chars.
 	 	$regex = "/CREATE TABLE (?:IF NOT EXISTS )?`?([\w]*)`?\s*?\(([^;]*)\)\s*(ENGINE|TYPE)\s*?=\s?([\w]*)[\w =]*;/i";
@@ -973,13 +973,6 @@ class db_verify
 	//	$regex = "/`?([\w]*)`?\s*?(".implode("|",$this->fieldTypes)."|".implode("|",$this->fieldTypeNum).")\s?(?:\([\s]?([0-9,]*)[\s]?\))?[\s]?(unsigned)?[\s]?.*?(?:(NOT NULL|NULL))?[\s]*(auto_increment|default .*)?[\s]?(?:PRIMARY KEY)?[\s]*?,?\s*?\n/im";
 		$regex = "/^\s*?`?([\w]*)`?\s*?(".implode("|",$this->fieldTypes)."|".implode("|",$this->fieldTypeNum).")\s?(?:\([\s]?([0-9,]*)[\s]?\))?[\s]?(unsigned)?[\s]?.*?(?:(NOT NULL|NULL))?[\s]*(auto_increment|default|AUTO_INCREMENT|DEFAULT [\w'\s.\(:\)-]*)?[\s]?(comment [\w\s'.-]*)?[\s]?(?:PRIMARY KEY)?[\s]*?,?\s*?\n/im";
 
-		if(e_DEBUG)
-		{
-		//	e107::getMessage()->addDebug("Regex: ".print_a($data,true));
-		 //   echo $regex;
-		//	e107::getMessage()->addDebug("Regex: ".$regex);
-
-		}
 
 	//	echo $regex."<br /><br />";
 	

@@ -89,8 +89,16 @@ class e_theme
 	{
 		if($theme === null)
 		{
-			$theme = e107::pref('core','sitetheme');
+			$theme = deftrue('USERTHEME', e107::pref('core','sitetheme'));
+
+			if(defined('PREVIEWTHEME'))
+			{
+				$theme = PREVIEWTHEME;
+			}
+
 		}
+
+
 
 		if(!is_readable(e_THEME.$theme."/layouts/".$key."_layout.html") || !is_readable(e_THEME.$theme."/theme.html"))
 		{
@@ -120,6 +128,25 @@ class e_theme
 		$LAYOUT[$key] = file_get_contents(e_THEME.$theme."/layouts/".$key."_layout.html");
 
 		return $LAYOUT;
+	}
+
+	public static function showPreview()
+	{
+
+		/*
+				e107::includeLan(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_theme.php");
+				$text = "<br /><div class='indent'>".TPVLAN_1.".</div><br />";
+
+				$srch = array(
+					'{PREVIEWTHEMENAME}' => PREVIEWTHEME,
+					'{e_ADMIN}' => e_ADMIN
+				);*/
+
+		//	$text = str_replace(array_keys($srch),$srch,$text);
+		echo "<div class='alert alert-warning alert-block'>Theme Preview Mode: <b>" . PREVIEWTHEME . "</b></div>";
+
+		//	global $ns;
+		//	$ns->tablerender(TPVLAN_2, $text);
 	}
 
 
@@ -298,7 +325,7 @@ class e_theme
 	{
 		$themeArray = array();
 
-		$tloop = 1;
+
 
 		$cacheTag = self::CACHETAG;
 
@@ -308,11 +335,13 @@ class e_theme
 			return $this;
 		}
 
-		$array = scandir(e_THEME);
+	//	$array = scandir(e_THEME);
+		$array = e107::getFile()->get_dirs(e_THEME);
+		$tloop = 1;
 
 		foreach($array as $file)
 		{
-			if($file != "." && $file != ".." && $file != "CVS" && $file != "templates" && is_dir(e_THEME.$file) && is_readable(e_THEME.$file."/theme.php"))
+			if($file != "CVS" && $file != "templates" && is_readable(e_THEME.$file."/theme.php"))
 			{
 
 				$themeArray[$file] = self::getThemeInfo($file);
@@ -334,8 +363,8 @@ class e_theme
 
 
 	/**
-	 * Return a var from the current theme.
-	 * @param $var
+	 * Return a var from the current theme or all vars if $var is empty.
+	 * @param string|null $var
 	 * @param null $key
 	 * @return array|bool
 	 */
@@ -367,9 +396,7 @@ class e_theme
 
 		$get = eHelper::removeTrackers($get);
 
-		$ret = empty($get) ? $site : $site.'?'.http_build_query($get);
-
-		return $ret;
+		return empty($get) ? $site : $site.'?'.http_build_query($get);
 	}
 
 
@@ -504,42 +531,60 @@ class e_theme
 	/**
 	 * Return a list of all local themes in various formats.
 	 * Replaces getThemeList
-	 * @param null|string $mode  null, 'version' | 'id'
+	 * @param null|string $mode  null, 'version' | 'id' | 'xml'
 	 * @return array|bool a list or false if no results
 	 */
 	public function getList($mode=null)
 	{
 		$arr = array();
 
-		if($mode === 'version')
+		switch ($mode)
 		{
-			foreach($this->_data as $dir=>$v)
-			{
-				$arr[$dir] = array('version'=>$v['version'], 'author'=>$v['author']);
-			}
+			case "version":
+				foreach($this->_data as $dir=>$v)
+				{
+					$arr[$dir] = array('version'=>$v['version'], 'author'=>$v['author']);
+				}
+				break;
 
-		}
-		elseif($mode === 'id')
-		{
-			foreach($this->_data as $dir=>$v)
-			{
-				$arr[] = $dir;
-			}
-		}
-		else
-		{
-			$arr = $this->_data;
+			case "id":
+				$count = 1;
+				foreach($this->_data as $dir=>$v)
+				{
+					$arr[$count] = $dir;
+					$count++;
+				}
+				break;
+			case 'xml':
+				$count = 1;
+				foreach($this->_data as $dir=>$v)
+				{
+					if($v['legacy'] === true)
+					{
+						continue;
+					}
+
+					$v['id'] = $count; // reset the counter.
+					$arr[$dir] = $v;
+
+					$count++;
+				}
+			break;
+
+			default:
+				$arr = $this->_data;
 		}
 
 
 		return !empty($arr) ? $arr : false;
 
-
 	}
+
+
 
 	/**
 	 * Get a list of all themes in theme folder and its data.
-	 * @deprecated
+	 * @deprecated Use getList($mode) instead
 	 * @see load();
 	 * @param bool|false xml|false
 	 * @param bool|false $force force a refresh ie. ignore cached list.
@@ -547,6 +592,8 @@ class e_theme
 	 */
 	public static function getThemeList($mode = false, $force = false)
 	{
+		trigger_error('<b>'.__METHOD__.' is deprecated.</b> Use getList() instead.', E_USER_DEPRECATED); // NO LAN
+
 		$themeArray = array();
 
 		$tloop = 1;
@@ -615,6 +662,7 @@ class e_theme
 		$handle2 = e107::getFile()->get_files(e_THEME.$file."/", "\.php|\.css|\.xml|preview\.jpg|preview\.png", $reject, 1);
 
 		$themeArray = array();
+		$themeArray[$file] = array();
 
 		foreach ($handle2 as $fln)
 		{
@@ -622,14 +670,14 @@ class e_theme
 
 			$themeArray[$file]['files'][] = $file2;
 
-			if(strstr($file2, "preview."))
+			if(strpos($file2, "preview.") !== false)
 			{
 				$themeArray[$file]['preview'] = e_THEME.$file."/".$file2;
 			}
 
 			// ----------------  get information string for css file - Legacy mode (no theme.xml)
 
-			if(strstr($file2, ".css") && !strstr($file2, "menu.css") && strpos($file2, "e_") !== 0)
+			if(strpos($file2, ".css") !== false && strpos($file2, "menu.css") === false && strpos($file2, "e_") !== 0)
 			{
 				if($cssContents = file_get_contents(e_THEME.$file."/".$file2))
 				{
@@ -642,10 +690,10 @@ class e_theme
 					$themeArray[$file]['css'][] = array("name"=>$file2,	 "info"=>$match[1], "scope"=>$scope, "nonadmin"=>$nonadmin);
 
 				}
-				else
-				{
+				//else
+				//{
  				//	$mes->addDebug("Couldn't read file: ".e_THEME.$file."/".$file2);
-				}
+			//	}
 			}
 
 
@@ -655,13 +703,16 @@ class e_theme
 
 		// Load Theme information and merge with existing array. theme.xml (v2.x theme) is given priority over theme.php (v1.x).
 
-		if(in_array("theme.xml", $themeArray[$file]['files']))
+		if(!empty($themeArray[$file]['files']))
 		{
-			$themeArray[$file] = array_merge($themeArray[$file], self::parse_theme_xml($file));
-		}
-		elseif(in_array("theme.php", $themeArray[$file]['files']))
-		{
-			$themeArray[$file] = array_merge($themeArray[$file], self::parse_theme_php($file));
+			if(in_array("theme.xml", $themeArray[$file]['files']))
+			{
+				$themeArray[$file] = array_merge($themeArray[$file], self::parse_theme_xml($file));
+			}
+			elseif(in_array("theme.php", $themeArray[$file]['files']))
+			{
+				$themeArray[$file] = array_merge($themeArray[$file], self::parse_theme_php($file));
+			}
 		}
 
 		if(!empty($themeArray[$file]['css']) && count($themeArray[$file]['css']) > 1)
@@ -741,7 +792,7 @@ class e_theme
 		{
 			foreach ($themeContentsArray as $line)
 			{
-				if(strstr($line, "CUSTOMPAGES"))
+				if(strpos($line, "CUSTOMPAGES") !== false)
 				{
 					try
 					{
@@ -804,6 +855,7 @@ class e_theme
 	//	 print_a($lays);
 		$themeArray['legacy'] = true;
 		$themeArray['html'] = false;
+		$themeArray['compatibility'] = '1';
 
 		return $themeArray;
 	}
@@ -823,12 +875,12 @@ class e_theme
 	//	$oldvars =
 		$vars = $xml->loadXMLfile(e_THEME.$path.'/theme.xml', 'advanced', true); // must be 'advanced'
 
-		if($path == "bootstrap3" )
-		{
+		//if($path == "bootstrap3" )
+	//	{
 	//		echo "<table class='table table-bordered'>
 	//		<tr><th>old</th><th>new parser</th></tr>
 	//	<tr><td>".print_a($oldvars,true)."</td><td>".print_a($vars,true)."</td></tr></table>";
-		}
+	//	}
 
 
 		$vars['name'] 			= varset($vars['@attributes']['name']);
@@ -847,7 +899,7 @@ class e_theme
 		$vars['@attributes']['default'] = (varset($vars['@attributes']['default']) && strtolower($vars['@attributes']['default']) == 'true') ? 1 : 0;
 		$vars['preview'] 		= varset($vars['screenshots']['image']);
 		$vars['thumbnail'] 		= isset($vars['preview'][0]) && file_exists(e_THEME.$path.'/'.$vars['preview'][0]) ?  $vars['preview'][0] : '';
-		$vars['html']           = file_exists(e_THEME.$path.'/theme.html') && is_dir(e_THEME.$path.'/layouts') ? true : false;
+		$vars['html']           = (file_exists(e_THEME . $path . '/theme.html') && is_dir(e_THEME . $path . '/layouts'));
 
 
 		if(!empty($vars['themePrefs']))
@@ -943,7 +995,7 @@ class e_theme
 			foreach($vars['stylesheets']['css'] as $val)
 			{
 			//	$notadmin = vartrue($val['@attributes']['admin']) ? false : true;
-				$notadmin = (varset($val['@attributes']['scope']) !== 'admin') ? true : false;
+				$notadmin = varset($val['@attributes']['scope']) !== 'admin';
 
 				$vars['css'][] = array(
 					"name"      => $val['@attributes']['file'],
@@ -978,13 +1030,13 @@ class e_theme
 		}
 
 
-		if($path == "bootstrap3" )
-		{
+		//if($path == "bootstrap3" )
+	//	{
             //	e107::getMessage()->addDebug("<h2>".$path."</h2>");
             //	e107::getMessage()->addDebug(print_a($vars,true));
             //	print_a($vars);
             //	echo "<table class='table'><tr><td>".print_a($vars,true)."</td><td>".print_a($adv,true)."</td></tr></table>";
-		}
+	//	}
 
 
 		return $vars;
@@ -1020,6 +1072,139 @@ class e_theme
 		}
 
 		return implode(', ', $category);
+
+	}
+
+	private static function initThemePreview($themeDir, $layout=null)
+	{
+		$themeDir = filter_var($themeDir);
+		$themeDir = basename($themeDir);
+
+		$themeobj = new themeHandler;
+		$defLayout = !empty($layout) ? $layout : $themeobj->findDefault($themeDir);
+
+		define('THEME_LAYOUT', $defLayout);
+		define('PREVIEWTHEME', $themeDir);
+
+		define('THEME', e_THEME . $themeDir . '/');
+		define('THEME_ABS', e_THEME_ABS . $themeDir . '/');
+
+		$legacy = (file_exists(e_THEME . $themeDir . '/theme.xml') === false);
+
+		if($legacy === true)
+		{
+			$version = 1.0;
+		}
+		else
+		{
+			$version = (file_exists(e_THEME . $themeDir . '/theme.html')) ? 2.3 : 2.0;
+		}
+
+		define('THEME_VERSION', $version);
+		define('THEME_LEGACY', $legacy);
+
+	}
+
+	private static function initThemeLayout($pref)
+	{
+
+		e107::getDebug()->logTime('Find/Load Theme-Layout'); // needs to run after checkvalidtheme() (for theme previewing).
+
+		if(deftrue('e_ADMIN_AREA'))
+		{
+			define('THEME_STYLE', $pref['admincss']);
+		}
+		elseif(!empty($pref['themecss']) && file_exists(THEME.$pref['themecss']))
+		{
+			define('THEME_STYLE', $pref['themecss']);
+		}
+		else
+		{
+			define('THEME_STYLE', 'style.css');
+		}
+
+		if(!defined('THEME_LAYOUT'))
+		{
+			$user_pref      = e107::getUser()->getPref();
+			$cusPagePref    = (!empty($user_pref['sitetheme_custompages'])) ? $user_pref['sitetheme_custompages'] : varset($pref['sitetheme_custompages'],array());
+			$cusPageDef     = (empty($user_pref['sitetheme_deflayout'])) ? varset($pref['sitetheme_deflayout']) : $user_pref['sitetheme_deflayout'];
+			$deflayout      = e107::getTheme()->getThemeLayout($cusPagePref, $cusPageDef, e_REQUEST_URL, varset($_SERVER['SCRIPT_FILENAME']));
+
+			define('THEME_LAYOUT',$deflayout);
+
+		    unset($cusPageDef,$lyout,$cusPagePref,$menus_equery,$deflayout);
+		}
+
+
+	}
+	/**
+	 * Replacement of checkvalidtheme()
+	 * @param string $themeDir
+	 */
+	public static function initTheme($themeDir)
+	{
+		$sql = e107::getDb();
+		$e107 = e107::getInstance();
+		$tp = e107::getParser();
+		$pref = e107::getPref();
+
+		e107::getDebug()->logTime('Theme Check');
+
+		// e_QUERY not set when in single entry mod
+		if (getperms('0') && !empty($_GET['themepreview']))
+		{
+			$layout = !empty($_GET['layout']) ? $_GET['layout'] : null;
+			self::initThemePreview($_GET['themepreview'], $layout);
+			self::initThemeLayout($pref);
+			return;
+		}
+
+		// check for valid theme.
+		if (@fopen(e_THEME . $themeDir . '/theme.php', 'r'))
+		{
+			define('THEME', e_THEME . $themeDir . '/');
+			define('THEME_ABS', e_THEME_ABS . $themeDir . '/');
+
+			$legacy = (file_exists(e_THEME . $themeDir . '/theme.xml') === false);
+			define('THEME_LEGACY', $legacy);
+
+			if($legacy === true)
+			{
+				$version = 1.0;
+			}
+			else
+			{
+				$version = (file_exists(e_THEME . $themeDir . '/theme.html')) ? 2.3 : 2.0;
+			}
+
+			define('THEME_VERSION', $version);
+
+			$e107->site_theme = $themeDir;
+			e107::getDebug()->logTime('Theme Check End');
+
+			self::initThemeLayout($pref);
+			return;
+		}
+
+		// fallback in case selected theme failed.
+
+		$ADMIN_DIRECTORY = e107::getFolder('admin');
+		$e107tmp_theme = 'bootstrap3'; // set to bootstrap3 by default.
+		define('THEME', e_THEME . $e107tmp_theme . '/');
+		define('THEME_ABS', e_THEME_ABS . $e107tmp_theme . '/');
+		define('THEME_VERSION', 2.3);
+		define('THEME_LEGACY', false);
+		define('USERTHEME', 'bootstrap3');
+		define('BOOTSTRAP', 3);
+		define('FONTAWESOME', 4);
+
+		if (ADMIN && (e_ADMIN_AREA !== true))
+		{
+			echo "<div class='alert alert-danger'><b>".$themeDir."</b> ".str_replace('\n','<br />',CORE_LAN1)."</div>";
+		}
+
+		e107::getDebug()->logTime('Theme Check End');
+		self::initThemeLayout($pref);
 
 	}
 
@@ -1119,7 +1304,7 @@ class themeHandler
 
 		if(!empty($_POST['setUploadTheme']) && !empty($unzippedTheme))
 		{
-			$themeArray = $this->getThemes();
+			$themeArray = e107::getTheme()->getList();
 			$this->id = $themeArray[$unzippedTheme]['id'];
 
 			if($this->setTheme())
@@ -1140,14 +1325,14 @@ class themeHandler
 		}
 
 
-		$this->themeArray = (defined('E107_INSTALL')) ? $this->getThemes('xml') : $this->getThemes();
+		$this->themeArray = (defined('E107_INSTALL')) ?e107::getTheme()->getList('xml') : e107::getTheme()->getList();
 
 		//     print_a($this -> themeArray);
 
 
 		foreach ($_POST as $key=>$post)
 		{
-			if(strstr($key, "preview"))
+			if(strpos($key, "preview") !== false)
 			{
 				//	$this -> id = str_replace("preview_", "", $key);
 				$this->id = key($post);
@@ -1168,7 +1353,7 @@ class themeHandler
 				}
 			}*/
 
-			if(strstr($key, "selectadmin"))
+			if(strpos($key, "selectadmin") !== false)
 			{
 				$this->id = key($post);
 				$this->setAdminTheme();
@@ -1180,11 +1365,12 @@ class themeHandler
 		if(isset($_POST['submit_adminstyle']))
 		{
 			$this->id = $this->curTheme;
-			if($this->setAdminStyle())
+			$this->setAdminStyle(); // this redirects.
+			/*if($this->setAdminStyle())
 			{
 				eMessage::getInstance()->add(TPVLAN_43, E_MESSAGE_SUCCESS);
 			}
-			e107::getConfig()->save(true);
+			e107::getConfig()->save(true);*/
 		}
 
 		if(isset($_POST['submit_style']))
@@ -1248,111 +1434,30 @@ class themeHandler
 
 
 	}
-	
-	function getThemes($mode = FALSE)
-	{
-		$themeArray = array();
-		
-		$tloop = 1;
-		$fl = e107::getFile();
-		$array = $fl->get_dirs(e_THEME);
-		
-		foreach($array as $file)
-		{
-			
-			if(($mode == 'xml') && !is_readable(e_THEME.$file."/theme.xml"))
-			{
-				continue;
-			}
-			
-			if($file != "." && $file != ".." && $file != "CVS" && $file != "templates" && is_dir(e_THEME.$file) && is_readable(e_THEME.$file."/theme.php"))
-			{
-				if($mode == "id")
-				{
-					$themeArray[$tloop] = $file;
-				}
-				else
-				{
-					$themeArray[$file] = $this->getThemeInfo($file);
-					$themeArray[$file]['id'] = $tloop;
-				}
-				$tloop++;
-			}
-		}
-	
-	//	 echo "<pre>";
-	//	 print_r($themeArray);
-	//	 echo "</pre>";
 
-		
-		return $themeArray;
+	/**
+	 * Returns a list of themes and their information.
+	 * @deprecated
+	 * @param false $mode
+	 * @return array|bool
+	 */
+	public function getThemes($mode = FALSE)
+	{
+		trigger_error('<b>'.__METHOD__.' is deprecated.</b> Use e107::getTheme()->getList($mode); instead. ', E_USER_DEPRECATED);
+
+		return e107::getTheme()->getList($mode);
+
 	}
 
-	
+	/**
+	 * @deprecated Use e107::getTheme($file)->get(); instead.
+	 * @param string $file - theme folder name.
+	 * @return array|mixed
+	 */
 	function getThemeInfo($file)
 	{
-	//	return e_theme::getThemeInfo($file);
-
-		$mes = e107::getMessage();
-		$reject = array('e_.*');
-		$handle2 = e107::getFile()->get_files(e_THEME.$file."/", "\.php|\.css|\.xml|preview\.jpg|preview\.png", $reject, 1);
-
-		foreach ($handle2 as $fln)
-		{
-			$file2 = str_replace(e_THEME.$file."/", "", $fln['path']).$fln['fname'];
-			
-			$themeArray[$file]['files'][] = $file2;
-			
-			if(strstr($file2, "preview."))
-			{
-				$themeArray[$file]['preview'] = e_THEME.$file."/".$file2;
-			}
-
-			// ----------------  get information string for css file - Legacy mode (no theme.xml) 
-
-			if(strstr($file2, ".css") && !strstr($file2, "menu.css") && strpos($file2, "e_") !== 0)
-			{
-				if($cssContents = file_get_contents(e_THEME.$file."/".$file2))
-				{
-					$nonadmin = preg_match('/\* Non-Admin(.*?)\*\//', $cssContents) ? true : false;
-					preg_match('/\* info:(.*?)\*\//', $cssContents, $match);
-					$match[1] = varset($match[1], '');
-					$scope = ($nonadmin == true) ? 'front' : '';
-
-
-					$themeArray[$file]['css'][] = array("name"=>$file2,	 "info"=>$match[1], "scope"=>$scope, "nonadmin"=>$nonadmin);
-					
-				}
-				else
-				{
- 				//	$mes->addDebug("Couldn't read file: ".e_THEME.$file."/".$file2);	
-				}
-			}
-
-		
-		} // end while..
-		
-		// Load Theme information and merge with existing array. theme.xml (v2.x theme) is given priority over theme.php (v1.x).
-		
-		if(in_array("theme.xml", $themeArray[$file]['files']))
-		{
-			$themeArray[$file] = array_merge($themeArray[$file], $this->parse_theme_xml($file));
-		}
-		elseif(in_array("theme.php", $themeArray[$file]['files']))
-		{
-			$themeArray[$file] = array_merge($themeArray[$file], $this->parse_theme_php($file));
-		}
-
-		if(!empty($themeArray[$file]['css']) && count($themeArray[$file]['css']) > 1)
-		{
-			$themeArray[$file]['multipleStylesheets'] = true;
-		}
-
-
-
-		return $themeArray[$file];
-
-	
+		trigger_error('<b>'.__METHOD__.'</b> is deprecated. Use e107::getTheme($themedir)->get(); instead. ', E_USER_DEPRECATED);
+		return e107::getTheme($file)->get();
 	}
 	
 	/**
@@ -1554,7 +1659,7 @@ class themeHandler
 			$mp 	= $this->getMarketplace();
 			$from 	= intval(varset($_GET['frm']));
 			$limit 	= 96; // FIXME - ajax pages load
-			$srch 	= preg_replace('/[^\w]/','', vartrue($_GET['srch'])); 
+			$srch 	= preg_replace('/[\W]/','', vartrue($_GET['srch']));
 			
 			// check for cURL
 			if(!function_exists('curl_init'))
@@ -1563,7 +1668,7 @@ class themeHandler
 			}
 			
 			// auth
-			$mp->generateAuthKey($e107SiteUsername, $e107SiteUserpass);
+		//	$mp->generateAuthKey($e107SiteUsername, $e107SiteUserpass);
 			
 			// do the request, retrieve and parse data
 			$xdata = $mp->call('getList', array(
@@ -1718,7 +1823,7 @@ class themeHandler
 			foreach($slides as $key=>$v)
 			{
 				$id = $key + 1;	
-				$indicators .= '<li data-target="#myCarousel" data-slide-to="'.$id.'"></li>';
+				$indicators .= '<li data-target="#myCarousel" data-slide-to="'.$id.'" data-bs-slide-to="'.$id.'"></li>';
 			}
 			
 			$indicators .=	'</ol>';		
@@ -1996,7 +2101,7 @@ class themeHandler
 				foreach($theme['preview'] as $pic)
 				{
 					
-					$picFull = (substr($pic,0,4) == 'http') ? $pic : e_THEME.$theme['path']."/".$pic;
+					$picFull = (strpos($pic, 'http') === 0) ? $pic : e_THEME.$theme['path']."/".$pic;
 					
 					
 					$text .= "<div class='col-md-6'>
@@ -2015,10 +2120,10 @@ class themeHandler
 		
 	//	$text .= "<div class='right'><a href='#themeInfo_".$theme['id']."' class='e-expandit'>Close</a></div>";
 
-		if(E107_DEBUG_LEVEL > 0)
-		{
+		//if(E107_DEBUG_LEVEL > 0)
+	//	{
 		//	$text .= print_a($theme, true);
-		}
+	//	}
 	
 	
 		return $text;
@@ -2119,7 +2224,7 @@ class themeHandler
 					}
 
 					$tdClass = !empty($val['writeParms']['post']) ? 'form-inline' : '';
-					$text .= "<tr><td><b>".$val['title']."</b>:</td><td class='".$tdClass."' colspan='2'>".$frm->renderElement($field, $value[$field], $val)."<div class='field-help'>".varset($val['help'])."</div></td></tr>";
+					$text .= "<tr><td><b>".$val['title']."</b>:</td><td class='".$tdClass."' colspan='2'>".$frm->renderElement($field, varset($value[$field]), $val)."<div class='field-help'>".varset($val['help'])."</div></td></tr>";
 				}
 			}
 
@@ -2211,7 +2316,7 @@ class themeHandler
 		$price 			= '';
 
 
-		if(substr($theme['thumbnail'],0,4) == 'http')
+		if(strpos($theme['thumbnail'],'http') === 0)
 		{
 			$thumbPath = $theme['thumbnail'];	
 			$previewPath = $theme['preview'][0];	
@@ -2300,10 +2405,10 @@ class themeHandler
 			$admin_icon = "";	
 		}
 		
-		if($theme['name'] == 'bootstrap')
-		{
+		//if($theme['name'] == 'bootstrap')
+		//{
 		//	print_a($theme);	
-		}
+	//	}
 	//	
 	//	$thumbPath = (substr($theme['thumbnail'],0,4) == 'http') ? $theme['thumbnail'] : e_THEME.$theme['path'] ."/".$theme['preview'][0];
 	//	$thumbnail = "<a href='".e_BASE."news.php?themepreview.".$theme['id']."' title='".TPVLAN_9."' >";
@@ -2571,7 +2676,7 @@ class themeHandler
 						foreach ($adminstyles as $as)
 						{
 							$style = str_replace(".php", "", $as['fname']);
-							$astext .= "<option value='{$style}'".($pref['adminstyle'] == $style ? " selected='selected'" : "").">".$style."</option>\n";
+							$astext .= "<option value='{$style}' ".($pref['adminstyle'] == $style ? " selected='selected'" : "").">".$style."</option>\n";
 						}
 						$astext .= "</select>";
 						
@@ -2733,7 +2838,7 @@ class themeHandler
 				{
 					foreach($theme['files'] as $val) // get wildcard list of css files.
 					{
-						if(substr($val,-4) == '.css' && substr($val, 0, 6) != "admin_")
+						if(substr($val,-4) == '.css' && strpos($val, "admin_") !== 0)
 						{
 							$detected[$val] = array('name'=>$val, 'info'=>'User-added Stylesheet', 'nonadmin'=>1);
 						}
@@ -2758,7 +2863,7 @@ class themeHandler
 				if($mode === self::RENDER_SITEPREFS)
 				{
 
-					if(substr($vl['name'], 0, 6) == "admin_")
+					if(strpos($vl['name'], "admin_") === 0)
 					{
 						$remove[$k] = $vl['name'];
 					}
@@ -2868,13 +2973,12 @@ class themeHandler
 	
 	function renderPlugins($pluginOpts)
 	{
-		global $frm,$sql;
-		
+
 		// if there is 1 entry, then it's not the same array.
 	//	$tmp = (varset($pluginOpts['plugin'][1])) ? $pluginOpts['plugin'] : $pluginOpts;
 		$text = "";
-
-
+		$frm = e107::getForm();
+		$sql = e107::getDb();
 		
 		foreach ($pluginOpts as $p)
 		{
@@ -2917,24 +3021,8 @@ class themeHandler
 		echo "<script type='text/javascript'>document.location.href='".e_BASE."index.php?themepreview.".$this->id."'</script>\n";
 		exit;
 	}
-	
-	static function showPreview()
-	{
-		e107::includeLan(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_theme.php");
-		$text = "<br /><div class='indent'>".TPVLAN_1.".</div><br />";
 
-		$srch = array(
-			'{PREVIEWTHEMENAME}' => PREVIEWTHEMENAME,
-			'{e_ADMIN}' => e_ADMIN
-		);
 
-		$text = str_replace(array_keys($srch),$srch,$text);
-
-		global $ns;
-		$ns->tablerender(TPVLAN_2, $text);
-	}
-
-	
 	/**
 	 * Set Theme as Main Theme.
 	 *
@@ -2947,7 +3035,7 @@ class themeHandler
 		$sql = e107::getDb();
 		$mes = e107::getMessage();
 		
-		$themeArray = $this->getThemes("id");
+		$themeArray = e107::getTheme()->getList("id");
 		
 		$name = ($name) ? $name : vartrue($themeArray[$this->id]);
 		$layout = $pref['sitetheme_layouts'] = is_array($this->themeArray[$name]['layouts']) ? $this->themeArray[$name]['layouts'] : array();
@@ -2973,8 +3061,13 @@ class themeHandler
 
 			$this->id = $name;
 			$this->loadThemeConfig();
-			$className = get_class($this->themeConfigObj);
 
+			$className = '';
+
+			if(!empty($this->themeConfigObj))
+			{
+				$className = get_class($this->themeConfigObj);
+			}
 			if($className === 'theme_config') // new way.  2.1.4
 			{
 				$themeConfig = e107::getThemeConfig($name);
@@ -3107,11 +3200,11 @@ class themeHandler
 			return e107::getParser()->filter($_POST['layout_default'], 'w');
 		}
 		
-		$l = $this->themeArray[$theme];
+	//	$l = $this->themeArray[$theme];
 		
-		if(!$l)
+	//	if(!$l)
 		{
-			$l = $this->getThemeInfo($theme);
+			$l = e107::getTheme($theme)->get(); // $this->getThemeInfo($theme);
 		}
 
 		
@@ -3138,7 +3231,7 @@ class themeHandler
 		$ns = e107::getRender();
 		$mes = e107::getMessage();
 		
-		$themeArray = $this->getThemes("id");
+		$themeArray =  e107::getTheme()->getList('id'); // $this->getThemes("id");
 		$pref['admintheme'] = $themeArray[$this->id];
 		$pref['admincss'] = file_exists(e_THEME.$pref['admintheme'].'/admin_dark.css') ? 'admin_dark.css' : 'admin_light.css';
 		$e107cache->clear_sys();
@@ -3230,7 +3323,7 @@ class themeHandler
 	/**
 	 * Set the Theme layouts, as found in theme.xml
 	 */
-	function setLayouts($name='')
+	function setLayouts()
 	{
 		$name = $this->id;
 		$layout = is_array($this->themeArray[$name]['layouts']) ? $this->themeArray[$name]['layouts'] : array();	
@@ -3304,6 +3397,8 @@ interface e_theme_config
  */
 interface e_theme_render
 {
+	public function init();
+
 	public function tablestyle($caption, $text, $mode='', $data=array());
 
 }

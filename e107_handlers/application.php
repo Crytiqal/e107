@@ -106,6 +106,12 @@ class e_url
 		$pref = e107::getPref();
 		$tp = e107::getParser();
 
+		if(empty($this->_request)) // likely 'index.php' ie. the home page.
+		{
+			$this->_request = e107::getFrontPage();
+			e107::canonical('_SITEURL_');
+		}
+
 		if(empty($this->_config) || empty($this->_request) || $this->_request === 'index.php' || $this->isLegacy() === true)
 		{
 			return false;
@@ -187,6 +193,18 @@ class e_url
 						{
 							define('e_PAGE', basename($file));
 						}
+
+
+						$fpUrl = str_replace(SITEURL, '', rtrim(e_REQUEST_URL, '?/'));
+						$fpPref = e107::getFrontpage();
+
+						if($fpUrl === $fpPref)
+						{
+
+						}
+						unset($fpUrl, $fpPref);
+
+
 						$this->_include= $file;
 						return true;
 					//	exit;
@@ -571,9 +589,8 @@ class eDispatcher
 		
 		$controller->dispatch($actionName);
 		
-		$content = ob_get_contents();
-		ob_end_clean();
-		
+		$content = ob_get_clean();
+
 		$response->appendBody($content);
 		unset($controller);
 	}
@@ -1048,7 +1065,7 @@ class eRouter
 	protected function _init()
 	{
 		// Gather all rules, add-on info, cache, module for main namespace etc
-		$this->_loadConfig()
+		$this->loadConfig()
 			->setAliases();
 		// we need config first as setter does some checks if module can be set as main
 		$this->setMainModule(e107::getPref('url_main_module', ''));
@@ -1099,12 +1116,23 @@ class eRouter
 	 * Load config and url rules, if not available - build it on the fly
 	 * @return eRouter
 	 */
-	protected function _loadConfig()
+	public function loadConfig($forceRebuild = false)
 	{
-		if(!is_readable(e_CACHE_URL.'config.php')) $config = $this->buildGlobalConfig();
-		else $config = include(e_CACHE_URL.'config.php');
-		
-		if(!$config) $config = array();
+
+		if(!is_readable(e_CACHE_URL . 'config.php') || $forceRebuild == true)
+		{
+			$config = $this->buildGlobalConfig();
+		}
+		else
+		{
+			$config = include(e_CACHE_URL . 'config.php');
+		}
+
+		if(empty($config))
+		{
+			trigger('URL Config is empty', E_USER_NOTICE);
+			$config = array();
+		}
 		
 		$rules = array();
 		
@@ -1115,6 +1143,7 @@ class eRouter
 			$config[$module] = $config[$module]['config'];
 		}
 		$this->_globalConfig = $config;
+
 		$this->setRuleSets($rules);
 
 		return $this;
@@ -1125,15 +1154,20 @@ class eRouter
 		if(file_exists(e_CACHE_URL.'config.php'))
 		{
 			@unlink(e_CACHE_URL.'config.php');	
-		}			
+		}
 	}
-	
+
 	/**
 	 * Build unified config.php
 	 */
 	public function buildGlobalConfig($save = true)
 	{
 		$active = e107::getPref('url_config', array());
+
+		if(empty($active))
+		{
+			trigger_error('url_config pref is empty', E_USER_NOTICE);
+		}
 		
 		$config = array();
 		foreach ($active as $module => $location) 
@@ -1238,6 +1272,7 @@ class eRouter
 	{
 		$f = e107::getFile();
 		$ret = array('core' => array(), 'plugin' => array(), 'override' => array());
+		$plugins = array();
 		
 		if($type == 'all' || $type = 'core')
 		{
@@ -1853,7 +1888,7 @@ class eRouter
 			eFront::isLegacy(varset($config['legacy']));
 			
 			// Don't allow single entry if required by module config
-			if(vartrue($config['noSingleEntry']))
+			if(!empty($config['noSingleEntry']))
 			{
 				$request->routed = true;
 				if(!eFront::isLegacy())
@@ -1884,10 +1919,10 @@ class eRouter
 			}
 			
 			// parse callback
-			if(vartrue($config['selfParse']))
+			if(!empty($config['selfParse']))
 			{
 				// controller/action[/additional/parms]
-				if(vartrue($config['urlSuffix'])) $rawPathInfo = $this->removeUrlSuffix($rawPathInfo, $config['urlSuffix']);
+				if(!empty($config['urlSuffix'])) $rawPathInfo = $this->removeUrlSuffix($rawPathInfo, $config['urlSuffix']);
 				$route = $this->configCallback($module, 'parse', array($rawPathInfo, $_GET, $request, $this, $config), $config['location']);
 			}
 			// default module route
@@ -1936,7 +1971,7 @@ class eRouter
 									if(isset($_GET[$key]) && !$request->isRequestParam($key))
 									{
 										// sanitize
-										$vars->$key = preg_replace('/[^\d\w\-]/', '', $_GET[$key]); 
+										$vars->$key = preg_replace('/[^\w\-]/', '', $_GET[$key]);
 									}
 								}
 							}
@@ -2177,7 +2212,7 @@ class eRouter
 		$urlSuffix = '';
 		
 		// Fix base url for legacy links
-		if(vartrue($config['noSingleEntry'])) $base = $options['full'] ? SITEURL : e_HTTP;
+		if(!empty($config['noSingleEntry'])) $base = $options['full'] ? SITEURL : e_HTTP;
 		elseif(self::FORMAT_GET !== $config['format'])
 		{
 			$urlSuffix = $this->urlSuffix;
@@ -2185,7 +2220,7 @@ class eRouter
 		} 
 		
 		// Create by config callback
-		if(vartrue($config['selfCreate']))
+		if(!empty($config['selfCreate']))
 		{
 			$tmp = $this->configCallback($module, 'create', array(array($route[1], $route[2]), $params, $options), $config['location']); 
 			
@@ -2257,7 +2292,7 @@ class eRouter
 		# Modify params if required
 		if($params) 
 		{
-			if(varset($config['mapVars']))
+			if(!empty($config['mapVars']))
 			{
 				foreach ($config['mapVars'] as $srcKey => $dstKey)
 				{
@@ -2265,6 +2300,10 @@ class eRouter
 					{
 						$params[$dstKey] = $params[$srcKey];
 						unset($params[$srcKey]);
+					}
+					else
+					{
+						trigger_error("Missing ".$srcKey." during URL creation in ".$module, E_USER_NOTICE);
 					}
 				}	
 			}
@@ -2280,7 +2319,14 @@ class eRouter
 				$params = array();
 				foreach ($config['allowVars'] as $key)
 				{
-					if(isset($copy[$key])) $params[$key] = $copy[$key];
+					if(isset($copy[$key]))
+					{
+						$params[$key] = $copy[$key];
+					}
+					else
+					{
+						trigger_error("Missing ".$key." during URL creation in ".$module, E_USER_NOTICE);
+					}
 				}
 				unset($copy);
 			}
@@ -2375,7 +2421,7 @@ class eRouter
 		if ('' === $pathInfo) return;
 		
 		if ($equal != $ampersand) $pathInfo = str_replace($equal, $ampersand, $pathInfo);
-		$segs = explode($ampersand, $pathInfo.$ampersand);
+	//	$segs = explode($ampersand, $pathInfo.$ampersand);
 		
 		$segs = explode('/', $pathInfo);
 		$ret = array();
@@ -3157,7 +3203,7 @@ class eController
      */
     public function __call($methodName, $args)
     {
-        if ('action' == substr($methodName, 0, 6)) 
+        if (strpos($methodName, 'action') === 0)
         {
             $action = substr($methodName, 6);
             throw new eException('Action "'.$action.'" does not exist', 2404);
@@ -3694,7 +3740,7 @@ class eRequest
 	/**
 	 * Set current route
 	 * @param string $route module/controller/action
-	 * @return eRequest
+	 * @return array|eRequest
 	 */
 	public function setRoute($route)
 	{
@@ -3762,7 +3808,7 @@ class eRequest
 	/**
 	 * Populate module, controller and action from route string
 	 * @param string $route
-	 * @return array route data
+	 * @return array|eRequest
 	 */
 	public function initFromRoute($route)
 	{
@@ -4768,7 +4814,7 @@ class eHelper
 
 		$title = str_replace(array('/',' ',","),' ',$title);
 		$title = str_replace(array("&","(",")"),'',$title);
-		$title = preg_replace('/[^\w\d\pL\s.-]/u', '', strip_tags(e107::getParser()->toHTML($title, TRUE)));
+		$title = preg_replace('/[^\w\pL\s.-]/u', '', strip_tags(e107::getParser()->toHTML($title, TRUE)));
 		$title = trim(preg_replace('/[\s]+/', ' ', str_replace('_', ' ', $title)));
 		$title = str_replace(array(' - ',' -','- ','--'),'-',$title); // cleanup to avoid ---
 

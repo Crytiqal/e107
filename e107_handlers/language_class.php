@@ -31,6 +31,7 @@ class language{
 	 */
 	protected $lanlist = null; // null is important!!!
 
+	// code / folder.
 	protected $list = array(
             "aa" => "Afar",
             "ab" => "Abkhazian",
@@ -48,7 +49,9 @@ class language{
             "bi" => "Bislama",
             "bo" => "Tibetan",
             "bs" => "Bosnian",
-            "br" => "Breton",
+
+			"br" => "Brazilian",
+
             "bg" => "Bulgarian",
             "my" => "Burmese",
             "ca" => "Catalan",
@@ -145,6 +148,7 @@ class language{
             "pi" => "Pali",
             "pl" => "Polish",
             "pt" => "Portuguese",
+
             "ps" => "Pushto",
             "qu" => "Quechua",
             "ro" => "Romanian",
@@ -230,6 +234,7 @@ class language{
 			"Norwegian"		=> "Norsk",
 			"Persian"	   	=> "فارسي",
 		    "Portuguese"	=> "Português",
+		    "Brazilian"     => "Português do Brasil",
 			"Polish"		=> "Polski",
 			"Romanian"		=> "Română",
 			"Russian"		=> "Pусский",
@@ -373,6 +378,11 @@ class language{
 	 */
 	function translate($lan, $array= array())
 	{
+		trigger_error('<b>'.__METHOD__.' is deprecated.</b> Use $tp->lanVars() instead.', E_USER_DEPRECATED); // NO LAN
+
+		$search = array();
+		$replace = array();
+
 		foreach($array as $k=>$v)
 		{
 			$search[] = "[".$k."]";
@@ -519,9 +529,10 @@ class language{
 
 		if(defined('e_PAGE_LANGUAGE') && ($detect_language = $this->isValid(e_PAGE_LANGUAGE))) // page specific override.
 		{
+			$doNothing = '';
 			// Do nothing as $detect_language is set.
 		}
-		elseif(vartrue($pref['multilanguage_subdomain']) && $this->isLangDomain(e_DOMAIN) && (defset('MULTILANG_SUBDOMAIN') !== false))
+		elseif(!empty($pref['multilanguage_subdomain']) && $this->isLangDomain(e_DOMAIN) && (defset('MULTILANG_SUBDOMAIN') !== false))
 		{
 			$detect_language = (e_SUBDOMAIN) ? $this->isValid(e_SUBDOMAIN) : $pref['sitelanguage'];
 			// Done in session handler now, based on MULTILANG_SUBDOMAIN value
@@ -541,16 +552,16 @@ class language{
 		}
 		elseif(isset($_GET['elan']) && ($detect_language = $this->isValid($_GET['elan']))) // eg: /index.php?elan=Spanish
 		{
-			// Do nothing			
+			$doNothing = '';// Do nothing
 		}
 		elseif(isset($_POST['setlanguage']) && ($detect_language = $this->isValid($_POST['sitelanguage'])))
 		{
-			// Do nothing	
+			$doNothing = '';// Do nothing
 		}
 		
 		elseif(isset($GLOBALS['elan']) && ($detect_language = $this->isValid($GLOBALS['elan'])))
 		{
-			// Do nothing		
+			$doNothing = '';// Do nothing
 		}
 		else
 		{
@@ -648,6 +659,12 @@ class language{
 		
 		$this->e_language = $user_language;
 		$this->setDefs();
+
+		if(e_LAN !== 'en')
+		{
+			e107::getParser()->setMultibyte(true);
+		}
+
 		return;
 	}
 
@@ -719,7 +736,7 @@ class language{
 
 	/**
 	 * Define Legacy LAN constants based on a supplied array.
-	 * @param null $bcList
+	 * @param array $bcList legacyLAN => Replacement-LAN
 	 */
 	public function bcDefs($bcList = null)
 	{
@@ -736,6 +753,10 @@ class language{
 			if(!defined($old) && defined($new))
 			{
 				define($old, constant($new));
+			}
+			elseif(empty($new) && !defined($old))
+			{
+				define($old,'');
 			}
 
 		}

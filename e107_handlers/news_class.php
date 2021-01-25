@@ -38,7 +38,7 @@ class news {
 	{
 		$tp = e107::getParser();
 		$sql = e107::getDb();
-		$admin_log = e107::getAdminLog();
+		$admin_log = e107::getLog();
 		$pref = e107::getPref();
 		$e_event = e107::getEvent();
 		$e107cache = e107::getCache();
@@ -170,7 +170,7 @@ class news {
 			{
 				
 			
-				e107::getAdminLog()->logArrayAll('NEWS_09', $logData);
+				e107::getLog()->addArray($logData)->save('NEWS_09');
 
 		
 				$data['data']['news_id'] = $news['news_id'];
@@ -224,7 +224,7 @@ class news {
 				e107::getCache()->clear('news.php');
 
 				//moved down - prevent wrong mysql_insert_id
-				e107::getAdminLog()->logArrayAll('NEWS_08', $logData);
+				e107::getLog()->addArray($logData)->save('NEWS_08');
 				e107::getEvent()->trigger('newspost', $data['data']);
 				e107::getEvent()->trigger('admin_news_created', $data['data']);
 
@@ -278,9 +278,9 @@ class news {
 		$tmp['caticon'] 				= defset('ICONSTYLE');
 		$tmp['commentoffstring'] 		= defset('COMMENTOFFSTRING', '');
 		$tmp['commentlink'] 			= defset('COMMENTLINK', e107::getParser()->toGlyph('fa-comment'));
-		$tmp['trackbackstring'] 		= defset('TRACKBACKSTRING');
+	/*	$tmp['trackbackstring'] 		= defset('TRACKBACKSTRING');
 		$tmp['trackbackbeforestring'] 	= defset('TRACKBACKBEFORESTRING');
-		$tmp['trackbackafterstring'] 	= defset('TRACKBACKAFTERSTRING');
+		$tmp['trackbackafterstring'] 	= defset('TRACKBACKAFTERSTRING');*/
 		$tmp['itemlink'] 				= defset('NEWSLIST_ITEMLINK');
 		$tmp['thumbnail'] 				= defset('NEWSLIST_THUMB', "border:0px");
 		$tmp['catlink']  				= defset('NEWSLIST_CATLINK');
@@ -295,29 +295,31 @@ class news {
 
 		if (!isset($param['image_nonew_small']))
 		{
-		  if (!defined("IMAGE_nonew_small"))
+		/*  if (!defined("IMAGE_nonew_small"))
 		  {
 			define("IMAGE_nonew_small", (file_exists(THEME."images/nonew_comments.png") ? "<img src='".THEME_ABS."images/nonew_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/nonew_comments.png' alt=''  />"));
-		  }
-		  $param['image_nonew_small'] = IMAGE_nonew_small;
+		  }*/
+		  $param['image_nonew_small'] = (file_exists(THEME."images/nonew_comments.png") ? "<img src='".THEME_ABS."images/nonew_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/nonew_comments.png' alt=''  />");
 		}
 
 		if (!isset($param['image_new_small']))
 		{
-		  if (!defined("IMAGE_new_small"))
+		 /* if (!defined("IMAGE_new_small"))
 		  {
 			define("IMAGE_new_small", (file_exists(THEME."images/new_comments.png") ? "<img src='".THEME_ABS."images/new_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/new_comments.png' alt=''  /> "));
 		  }
-		  $param['image_new_small'] = IMAGE_new_small;
+		  */
+		  $param['image_new_small'] = (file_exists(THEME."images/new_comments.png") ? "<img src='".THEME_ABS."images/new_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/new_comments.png' alt=''  /> ");
+
 		}
 
 		if (!isset($param['image_sticky']))
 		{
-		  if (!defined("IMAGE_sticky"))
+		 /* if (!defined("IMAGE_sticky"))
 		  {
 			define("IMAGE_sticky", (file_exists(THEME."images/sticky.png") ? "<img src='".THEME_ABS."images/sticky.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/sticky.png' alt='' style='width: 14px; height: 14px; vertical-align: bottom' /> "));
-		  }
-		  $param['image_sticky'] = IMAGE_sticky;
+		  }*/
+		  $param['image_sticky'] = (file_exists(THEME."images/sticky.png") ? "<img src='".THEME_ABS."images/sticky.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/sticky.png' alt='' style='width: 14px; height: 14px; vertical-align: bottom' /> ");
 		}
 
 		e107::setRegistry('current_news_item', $news);
@@ -335,7 +337,7 @@ class news {
 			} 
 			else 
 			{
-				$NEWS_PARSE = "{NEWSICON}&nbsp;<b>{NEWSTITLELINK}</b><div class='smalltext'>{NEWSAUTHOR} ".LAN_NEWS_100." {NEWSDATE} | {NEWSCOMMENTS}</div>";
+				$NEWS_PARSE = "{NEWSICON}&nbsp;<b>{NEWSTITLELINK}</b><div class='smalltext'>{NEWSAUTHOR} ".defset('LAN_NEWS_300', 'On')." {NEWSDATE} | {NEWSCOMMENTS}</div>";
 			}
 		}
 		else 
@@ -442,13 +444,15 @@ class news {
 	 */
 	function render_newsgrid($parm=null)
 	{
+
 		$cacheString = 'nq_news_grid_menu_'.md5(serialize($parm));
 
 		$cached = e107::getCache()->retrieve($cacheString);
 
 		if(false === $cached)
 		{
-			e107::plugLan('news');
+
+			e107::plugLan('news', null);
 
 			if(is_string($parm))
 			{
@@ -718,20 +722,20 @@ class e_news_tree extends e_front_tree_model
 	/**
 	 * Load tree by category id
 	 *
-	 * @param integer $category_id
+	 * @param integer $id
 	 * @param boolean $force
 	 * @param array $params DB query parameters
 	 * @return e_news_tree
 	 */
-	public function load($category_id = 0, $force = false, $params = array())
+	public function load($id = 0, $force = false, $params = array())
 	{
-		$category_id = intval($category_id);
-		if(!$this->hasCurrentCategoryId() || $force) $this->setCurrentCategoryId($category_id);
+		$id = intval($id);
+		if(!$this->hasCurrentCategoryId() || $force) $this->setCurrentCategoryId($id);
 		
 		$this->setParam('model_class', 'e_news_item')
 			->setParam('db_order', vartrue($params['db_order'], 'news_datestamp DESC'))
 			->setParam('db_limit', vartrue($params['db_limit'], '0,10'))
-			->setParam('db_where', $category_id ? 'news_category='.$category_id : '')
+			->setParam('db_where', $id ? 'news_category='.$id : '')
 			->setParam('noCacheStringModify', false);
 			
 		return parent::load($force);

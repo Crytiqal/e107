@@ -11,7 +11,7 @@ $_E107['no_online'] = true;
 $_E107['no_forceuserupdate'] = true;
 $_E107['no_menus'] = true;
 $_E107['no_maintenance'] = true;
-require_once("../../class2.php"); //TODO Prevent Theme loading.
+require_once(__DIR__.'/../../class2.php'); //TODO Prevent Theme loading.
 
 /*
 echo '
@@ -122,7 +122,7 @@ define('USE_GZIP', true);
 $compression_browser_support = false;
 $compression_server_support = false;
 
-if(strstr(varset($_SERVER['HTTP_ACCEPT_ENCODING']), 'gzip'))
+if(strpos(varset($_SERVER['HTTP_ACCEPT_ENCODING']), 'gzip') !== false)
 {
 	$compression_browser_support = true;
 }
@@ -858,6 +858,10 @@ class wysiwyg
 		$pathAn .= '/';
 		$pathAn .= e107::getLibrary()->getProperty('animate.css', 'path'); // sub-folder
 
+		$pathAn =  $tp->replaceConstants($pathAn, 'abs');
+		$pathFA =  $tp->replaceConstants($pathFA, 'abs');
+		$pathBS =  $tp->replaceConstants($pathBS, 'abs');
+
 		$editorCSS = array(
 			0 => $pathBS . '/css/bootstrap.min.css',
 			1 => $pathFA . '/css/font-awesome.min.css',
@@ -868,7 +872,7 @@ class wysiwyg
 
 	//	file_put_contents(e_LOG."wysiwyg.log", print_r($editorCSS,true));
 
-//		$editorCSS = $tp->replaceConstants($editorCSS, 'abs');
+	//	$editorCSS = $tp->replaceConstants($editorCSS, 'abs');
 
 		$ret['content_css']				= json_encode($editorCSS);
 		$ret['content_style']           = "div.clearfix { border-top:1px solid red } ";

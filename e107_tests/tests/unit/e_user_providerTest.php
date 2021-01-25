@@ -31,10 +31,11 @@ class e_user_providerTest extends \Codeception\Test\Unit
 	public function testGetSupportedProviders()
 	{
 		$result = e_user_provider::getSupportedProviders();
+
 		$this->assertIsArray($result);
 		$this->assertContains("Facebook", $result);
 		$this->assertContains("Twitter", $result);
-		$this->assertCount(46, $result,
+		$this->assertCount(45, $result,
 			"The number of Hybridauth providers has changed! If this is intentional, note the change " .
 			"in Hybridauth providers in the release changelog and update the count in this test."
 		);

@@ -64,13 +64,19 @@ class social_shortcodes extends e_shortcode
 		$tp = e107::getParser();
 		$tmpl = !empty($parm['template']) ? $parm['template'] : 'default';
 
-		$template = e107::getTemplate('social','social_xurl',$tmpl);
+		$template = e107::getTemplate('social','social_xurl', $tmpl);
+
+		if(empty($template)) // backup if the theme changes.
+		{
+			$template = e107::getTemplate('social','social_xurl', 'default');
+		//	return (ADMIN) ? "Unable to load social template [".$tmpl."]" : ''; // NO LAN
+		}
 
 		$social = array(
 			'rss'			=> array('href'=> (e107::isInstalled('rss_menu') ? e107::url('rss_menu', 'index', array('rss_url'=>'news')) : ''), 'title'=>'RSS/Atom Feed'),
 			'facebook'		=> array('href'=> deftrue('XURL_FACEBOOK'), 	'title'=>'Facebook'),
 			'twitter'		=> array('href'=> deftrue('XURL_TWITTER'),		'title'=>'Twitter'),
-			'google-plus'	=> array('href'=> deftrue('XURL_GOOGLE'),		'title'=>'Google Plus'),
+		//	'google-plus'	=> array('href'=> deftrue('XURL_GOOGLE'),		'title'=>'Google Plus'),
 			'linkedin'		=> array('href'=> deftrue('XURL_LINKEDIN'),		'title'=>'LinkedIn'),
 			'github'		=> array('href'=> deftrue('XURL_GITHUB'),		'title'=>'Github'),
 			'pinterest'		=> array('href'=> deftrue('XURL_PINTEREST'),	'title'=>'Pinterest'),
@@ -85,28 +91,20 @@ class social_shortcodes extends e_shortcode
  			
 		// print_a($social);
 	
-		$class      = (vartrue($parm['size'])) ?  'fa-'.$parm['size'] : '';
+		$class      = (!empty($parm['size'])) ?  'fa-'.$parm['size'] : '';
+		$class      .= (isset($parm['class'])) ? (string) $parm['class'] : $class;
 
-		// @deprecated - use template.
-		/*
-		$tooltipPos = vartrue($parm['tip-pos'], 'top');
 
-		if(isset($parm['tip']))
-		{
-			$tooltip = ($parm['tip'] == 'false' || empty($parm['tooltip'])) ? '' : 'e-tip';
-		}
-		else
-		{
-			$tooltip = 'e-tip';
-		}
-
-	*/	if(!empty($parm['type']))
+		if(!empty($parm['type']))
 		{
 			$newList = array();
 			$tmp = explode(",",$parm['type']);
 			foreach($tmp as $v)
 			{
-				$newList[$v] = $social[$v];
+				if(isset($social[$v]))
+				{
+					$newList[$v] = $social[$v];
+				}
 
 			}
 
@@ -299,7 +297,7 @@ class social_shortcodes extends e_shortcode
 
 		if(empty($parm['providers'])) // No parms so use prefs instead.
 		{
-			$defaultProviders = array('email' ,'facebook-like', 'facebook-share', 'twitter',  'google-plus1',  'pinterest' ,  'stumbleupon', 'reddit', 'digg' );
+			$defaultProviders = array('email' ,'facebook-like', 'facebook-share', 'twitter',  'pinterest' ,  'stumbleupon', 'reddit', 'digg' );
 			$parm['providers']  = !empty($pref['sharing_providers']) ? array_keys($pref['sharing_providers']) : $defaultProviders;
 		}
 		else
@@ -392,7 +390,10 @@ class social_shortcodes extends e_shortcode
 			$tmp = explode(",",$parm['type']);
 			foreach($tmp as $v)
 			{
-				$newlist[$v] = $opt[$v];
+				if(isset($opt[$v]))
+				{
+					$newlist[$v] = $opt[$v];
+				}
 			}
 
 			$opt = $newlist;
@@ -407,7 +408,7 @@ class social_shortcodes extends e_shortcode
 
 
 			$text = '<div class="social-share btn-group hidden-print '.$dir.'">
-				  <a class="'.$tooltip.' btn btn-dropdown btn-default btn-secondary btn-'.$size.' dropdown-toggle" data-toggle="dropdown" href="#" title="'.LAN_SOCIAL_204.'">'.$label.'</a>
+				  <a class="'.$tooltip.' btn btn-dropdown btn-default btn-secondary btn-'.$size.' dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" href="#" title="'.LAN_SOCIAL_204.'">'.$label.'</a>
 				 
 				  <ul class="dropdown-menu" role="menu" >
 				  
@@ -431,7 +432,7 @@ class social_shortcodes extends e_shortcode
 	/**
 	 * @example {TWITTER_TIMELINE: id=xxxxxxx&theme=light}
 	 */
-	function sc_twitter_timeline($parm)
+	function sc_twitter_timeline($parm=null)
 	{
 		$ns = e107::getRender();
 		

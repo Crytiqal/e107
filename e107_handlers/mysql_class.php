@@ -316,6 +316,8 @@ class e_db_mysql implements e_db
 	*/
 	function db_Mark_Time($sMarker)
 	{
+		trigger_error('<b>'.__METHOD__.' is deprecated.</b> Use e107::getDebug()->logTime() instead.', E_USER_DEPRECATED); // NO LAN
+
 		if($this->debugMode !== true)
 		{
 			return null;
@@ -379,7 +381,7 @@ class e_db_mysql implements e_db
 		{
 			$this->dbg->log($query);
 		}
-		if ($debug !== FALSE || strstr($_SERVER['QUERY_STRING'], 'showsql'))
+		if ($debug !== FALSE || strpos($_SERVER['QUERY_STRING'], 'showsql') !== false)
 		{
 			$debugQry = is_array($query) ? print_a($query,true) : $query;
 			$queryinfo[] = "<b>{$qry_from}</b>: ".$debugQry;
@@ -660,6 +662,8 @@ class e_db_mysql implements e_db
 	 */
 	public function db_Select($table, $fields = '*', $arg = '', $mode = 'default', $debug = FALSE, $log_type = '', $log_remark = '')
 	{
+		trigger_error('<b>'.__METHOD__.' is deprecated.</b> Use e107::getDb()->select() instead.', E_USER_DEPRECATED); // NO LAN
+
 		return $this->select($table, $fields, $arg, $mode !== 'default', $debug, $log_type, $log_remark);
 	}
 
@@ -1093,7 +1097,7 @@ class e_db_mysql implements e_db
 			case 'array':
 				if(is_array($fieldValue))
 				{
-					return "'".e107::getArrayStorage()->WriteArray($fieldValue, true)."'";
+					return "'".e107::serialize($fieldValue, true)."'";
 				}
 				return "'". (string) $fieldValue."'";
 			break;
@@ -1517,7 +1521,7 @@ class e_db_mysql implements e_db
 			foreach($this->mySQLtableList as $tab)
 			{
 
- 				if(substr($tab,0,4) == "lan_")
+ 				if(strpos($tab, "lan_") === 0)
 				{
 					list($tmp,$lng,$tableName) = explode("_",$tab,3);
 
@@ -1996,10 +2000,10 @@ class e_db_mysql implements e_db
 	 */
 	function escape($data, $strip = true)
 	{
-		if ($strip)
+	/*	if ($strip)
 		{
 			$data = strip_if_magic($data);
-		}
+		}*/
 
 		$this->provide_mySQLaccess();
 
@@ -2120,8 +2124,8 @@ class e_db_mysql implements e_db
 						$table[] = str_replace($prefix,"",$rows[0]);
 					}
 				}
-				$ret = array($language=>$table);
-				return $ret;
+
+				return array($language =>$table);
 			}
 			else
 			{
@@ -2159,7 +2163,7 @@ class e_db_mysql implements e_db
 	 */
 	public function resetTableList()
 	{
-		return $this->db_ResetTableList();
+		$this->db_ResetTableList();
 	}
 
 	/**
@@ -2215,13 +2219,13 @@ class e_db_mysql implements e_db
 
 			foreach($this->mySQLtableList as $tab)
 			{
-				if(substr($tab,0,4)!='lan_')
+				if(strpos($tab,'lan_') === 0)
 				{
-					$nolan[] = $tab;
+					$lan[] = $tab;
 				}
 				else
 				{
-					$lan[] = $tab;
+					$nolan[] = $tab;
 				}
 			}
 
@@ -2285,7 +2289,7 @@ class e_db_mysql implements e_db
 			$row = $this->fetch('num');
 			$qry = $row[1];
 			//        $qry = str_replace($old, $new, $qry);
-			$qry = preg_replace("#CREATE\sTABLE\s`{0,1}".$old."`{0,1}\s#", "CREATE TABLE {$new} ", $qry, 1); // More selective search
+			$qry = preg_replace("#CREATE\sTABLE\s`?".$old."`?\s#", "CREATE TABLE {$new} ", $qry, 1); // More selective search
 		}
 		else
 		{
@@ -2532,7 +2536,7 @@ class e_db_mysql implements e_db
 
 					if (false === file_put_contents(e_CACHE_DB.$tableName.'.php', $fileData))
 					{	// Could do something with error - but mustn't return FALSE - would trigger auto-generated structure
-
+						$result = false;
 					}
 
 					$result = true;

@@ -68,6 +68,7 @@ function defset($str, $default='')
  */
 function varsettrue(&$val, $default='')
 {
+	trigger_error('<b>varsettrue() is deprecated.</b> Use vartrue() instead.', E_USER_DEPRECATED); // NO LAN
 	return vartrue($val, $default);
 }
 
@@ -94,6 +95,7 @@ function vartrue(&$val, $default='')
  */
 function defsettrue($str, $default='')
 {
+    trigger_error('<b>defsettrue() is deprecated.</b> Use deftrue() instead.', E_USER_DEPRECATED); // NO LAN
 	if (defined($str) && constant($str)) { return constant($str); }
 	return $default;
 }
@@ -179,7 +181,7 @@ function e_dump($expr = null)
 
 /**
  * Strips slashes from a var if magic_quotes_gqc is enabled
- *
+ * @deprecated
  * @param mixed $data
  * @return mixed
  */
@@ -285,6 +287,108 @@ function echo_gzipped_page()
 
 }
 
+/**
+ * @deprecated but necessary. BC Fix.
+ * @return string
+ */
+function getip()
+{
+	trigger_error('<b>getip() is deprecated.</b> Use e107::getIPHandler()->ipDecode(USERIP) instead.', E_USER_DEPRECATED); // NO LAN
+
+	return e107::getIPHandler()->ipDecode(USERIP);
+}
+
+/**
+ * @deprecated - use e107::loadLanFiles();
+ * @param $unitName
+ * @param string $type
+ * @return bool|string
+ * Routine looks in standard paths for language files associated with a plugin or theme - primarily for core routines, which won't know
+ * for sure where the author has put them.
+ * $unitName is the name (directory path) of the plugin or theme
+ * $type determines what is to be loaded:
+ * 'runtime'	- the standard runtime language file for a plugin
+ * 'admin'		- the standard admin language file for a plugin
+ * 'theme'		- the standard language file for a plugin (these are usually pretty small, so one is enough)
+ * Otherwise, $type is treated as part of a filename within the plugin's language directory, prefixed with the current language
+ * Returns false on failure (not found).
+ * Returns the include_once error return if there is one
+ * Otherwise returns an empty string.
+ *
+ * Note - if the code knows precisely where the language file is located, use include_lan()
+ *
+ * $pref['noLanguageSubs'] can be set true to prevent searching for the English files if the files for the current site language don't exist.
+ */
+function loadLanFiles($unitName, $type='runtime')
+{
+	trigger_error('<b>loadLanFiles() is deprecated.</b> Use e107::loadLanFiles() instead.', E_USER_DEPRECATED); // NO LAN
+
+	$info = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,2);
+	e107::getMessage()->addDebug("Using deprecated function loanLanFiles(). Replace with e107::loadLanFiles().".print_a($info,true));
+	return e107::loadLanFiles($unitName, $type);
+}
+
+
+/**
+ * @deprecated Use ini_set() directly.
+ * @param $var
+ * @param $value
+ * @return false|string
+ */
+function e107_ini_set($var, $value)
+{
+	trigger_error('<b>e107_ini_set() is deprecated.</b> Use ini_set() instead.', E_USER_DEPRECATED); // NO LAN
+
+	if (function_exists('ini_set'))
+	{
+		return ini_set($var, $value);
+	}
+
+	return false;
+}
+
+/**
+ * @deprecated - use e107::isInstalled();
+ * @param $plugname
+ * @return bool
+ */
+function plugInstalled($plugname)
+{
+	trigger_error('<b>plugInstalled() is deprecated.</b> Use <e107::isInstalled() instead.', E_USER_DEPRECATED); // NO LAN
+
+	return e107::isInstalled($plugname);
+	/*global $pref;
+	// Could add more checks here later if appropriate
+	return isset($pref['plug_installed'][$plugname]);*/
+}
+
+/*
+// -----------------------------------------------------------------------------
+function table_exists($check)
+{
+	if (!$GLOBALS['mySQLtablelist'])
+	{
+		$tablist=mysql_list_tables($GLOBALS['mySQLdefaultdb']);
+		while (list($temp) = mysql_fetch_array($tablist))
+		{
+			$GLOBALS['mySQLtablelist'][] = $temp;
+		}
+	}
+
+	$mltable=MPREFIX.strtolower($check);
+
+	foreach ($GLOBALS['mySQLtablelist'] as $lang)
+	{
+		if (strpos($lang, $mltable) !== false)
+		{
+			return true;
+		}
+	}
+}
+*/
+
+
+
 
 // Better Array-sort by key function by acecream (22-Apr-2003 11:02) http://php.net/manual/en/function.asort.php
 if (!function_exists('asortbyindex')) 
@@ -297,6 +401,8 @@ if (!function_exists('asortbyindex'))
        }
        asort ($sort_values);
        reset ($sort_values);
+
+       $sorted_arr = array();
 
        foreach($sort_values as $arr_key =>$arr_val)
        {
@@ -314,21 +420,17 @@ if (!function_exists('r_emote'))
 	 */
 	function r_emote()
 	{
-		global $sysprefs, $pref;
-		$tp = e107::getParser();
-	
-		if (!is_object($tp->e_emote))
-		{
-		//	require_once(e_HANDLER.'emote_filter.php');
-			$tp->e_emote = new e_emoteFilter;
-		}
-		
+
+		$pack = e107::getPref('emotepack');
+
+		$list = e107::getEmote()->getList();
+
 		$str = '';
-		foreach($tp->e_emote->emotes as $key => $value)		// filename => text code
+		foreach($list as $key => $value)		// filename => text code
 		{
 			$key = str_replace("!", ".", $key);					// Usually '.' was replaced by '!' when saving
 			$key = preg_replace("#_(\w{3})$#", ".\\1", $key);	// '_' followed by exactly 3 chars is file extension
-			$key = e_IMAGE_ABS."emotes/" . $pref['emotepack'] . "/" .$key;		// Add in the file path
+			$key = e_IMAGE_ABS."emotes/" . $pack . "/" .$key;		// Add in the file path
 	
 			$value2 = substr($value, 0, strpos($value, " "));
 			$value = ($value2 ? $value2 : $value);
@@ -405,6 +507,7 @@ if (!function_exists('multiarray_sort'))
  			$key = is_numeric($arr_key) ? "" : $arr_key; // retain assoc-array keys. 
  			$sorted_arr[$key] = $array[$arr_key];
         }*/
+		$sorted_arr = array();
 
         foreach($sort_values as $arr_key=>$arr_val)
         {
@@ -445,8 +548,16 @@ class e_array {
         $first2Chars = substr($ArrayData,0,2);
         if($first2Chars === 'a:' || $first2Chars === 's:') // php serialize.
         {
-            $dat = unserialize($ArrayData);
-            $ArrayData = $this->WriteArray($dat,FALSE);
+            if(PHP_MAJOR_VERSION > 5)
+            {
+                 $dat = unserialize($ArrayData, ['allowed_classes' => false]);
+            }
+            else
+            {
+                $dat = unserialize($ArrayData);
+            }
+
+            $ArrayData = $this->serialize($dat,FALSE);
         }
 		elseif(strpos($ArrayData,'{') === 0 || strpos($ArrayData,'[') === 0) // json
 	    {
@@ -454,13 +565,17 @@ class e_array {
 
 	     //   e107::getDebug()->log("Json data found");
 
-	        if(e_DEBUG === true && json_last_error() !=  JSON_ERROR_NONE && !e107::isCli())
+	        if(deftrue('e_DEBUG') && json_last_error() !=  JSON_ERROR_NONE && !e107::isCli())
 	        {
-	            echo "<div class='alert alert-danger'><h4>e107::unserialize() Parser Error (json)</h4></div>";
-		        echo "<pre>";
-				debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
-				file_put_contents(e_LOG.'unserializeError_'.date('c').'.log', $ArrayData);
-				echo "</pre>";
+	            e107::getDebug()->log("e107::unserialize() Parser Error (json)");
+
+				$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 9);
+
+				$fileName = e_LOG.'unserializeError_'.time().'.log';
+
+	            file_put_contents($fileName, "input:". $sourceArrayData."\nbacktrace:\n".print_r($dbg,true));
+
+				return null;
 	        }
 
 	        return $dat;
@@ -475,7 +590,7 @@ class e_array {
 			$ArrayData = (string) substr($ArrayData,8);
 		}
 
-        if(strtolower(substr($ArrayData,0,5)) !== 'array')
+        if(stripos($ArrayData, 'array') !== 0)
         {
             return false;
         }
@@ -595,25 +710,25 @@ class e_array {
 
 
     /**
-     * @DEPRECATED - Backwards Compatible. Use e107::serialize() instead; 
+     * @deprecated - Backwards Compatible. Use e107::serialize() instead;
     * @param array $ArrayData array to be stored
     * @param bool $AddSlashes default true, add slashes for db storage, else false
     * @return string a string containg exported array data.
      */
-    function WriteArray($ArrayData, $AddSlashes = true) {
-        
+    function WriteArray($ArrayData, $AddSlashes = true)
+    {
+        trigger_error('<b>'.__METHOD__.' is deprecated.</b> Use e107::serialize() instead.', E_USER_DEPRECATED); // no LAN
         return  $this->serialize($ArrayData, $AddSlashes);   
 
     }
 	
-	function write($ArrayData, $AddSlashes = true) {
-        
-        return  $this->serialize($ArrayData, $AddSlashes);   
-
+	function write($ArrayData, $AddSlashes = true)
+	{
+        return  $this->serialize($ArrayData, $AddSlashes);
     }
 
     /**
-    * @DEPRECATED: Use e107::unserialize(); instead. 
+    * @deprecated: Use e107::unserialize(); instead.
     * Returns an array from stored array data.
     * @deprecated
     * @param string $ArrayData
@@ -621,6 +736,7 @@ class e_array {
     */
     function ReadArray($ArrayData) 
     {
+        trigger_error('<b>'.__METHOD__.' is deprecated.</b> Use e107::unserialize() instead.', E_USER_DEPRECATED); // NO LAN
         return $this->unserialize($ArrayData);
     }
 	

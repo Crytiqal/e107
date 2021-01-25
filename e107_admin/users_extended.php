@@ -8,7 +8,7 @@
  *
  */
 
-require_once('../class2.php');
+require_once(__DIR__.'/../class2.php');
 
 if (!getperms('4'))
 {
@@ -137,7 +137,7 @@ if(varset($_GET['mode']) == "ajax")
 			break;
 	}
 }
-
+/*
 if (isset($_POST['cancel']))
 {
 	header('location:'.e_SELF);
@@ -148,7 +148,7 @@ if (isset($_POST['cancel_cat']))
 {
 	header("location:".e_SELF."?cat");
 	exit;
-}
+}*/
 
 function js()
 {
@@ -343,8 +343,8 @@ e107::js('footer-inline', js());
 		protected $perPage			= 10;
 		protected $batchDelete		= true;
 		//	protected $batchCopy		= true;
-		//	protected $sortField		= 'somefield_order';
-		//	protected $orderStep		= 10;
+		protected $sortField		= 'user_extended_struct_order';
+		protected $orderStep		= 10;
 		protected $tabs				= array(LAN_BASIC,LAN_ADVANCED); // Use 'tab'=>0  OR 'tab'=>1 in the $fields below to enable.
 
 		protected $listQry      	= "SELECT * FROM `#user_extended_struct` WHERE user_extended_struct_type != 0 AND user_extended_struct_text != '_system_'  "; // Example Custom Query. LEFT JOINS allowed. Should be without any Order or Limit.
@@ -354,7 +354,7 @@ e107::js('footer-inline', js());
 		protected $fields 		= array (
 		    'checkboxes' =>   array ( 'title' => '', 'type' => null, 'data' => null, 'width' => '5%', 'thclass' => 'center', 'forced' => '1', 'class' => 'center', 'toggle' => 'e-multiselect',  ),
 		    'user_extended_struct_id' =>   array ( 'title' => LAN_ID, 'data' => 'int', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
-		    'user_extended_struct_name' =>   array ( 'title' => LAN_NAME, 'type' => 'text', 'data' => 'str', 'readonly'=>true, 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => 'tdClassRight=form-inline&pre=user_ ', 'class' => 'left', 'thclass' => 'left',  ),
+		    'user_extended_struct_name' =>   array ( 'title' => LAN_NAME, 'type' => 'method', 'data' => 'str', 'readonly'=>true, 'width' => '350px', 'help' => '', 'readParms' => '', 'writeParms' => 'tdClassRight=form-inline&pre=user_ ', 'class' => 'left', 'thclass' => 'left',  ),
 		    'user_extended_struct_text' =>   array ( 'title' => EXTLAN_79, 'type' => 'text', 'data' => 'str', 'width' => 'auto', 'inline' => true, 'help' => '', 'readParms' => 'constant=1', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
 			'user_extended_struct_type' =>   array ( 'title' => EXTLAN_2, 'type' => 'method', 'data' => 'int', 'width' => 'auto', 'batch' => true, 'filter' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
 			'user_extended_struct_values' =>   array ( 'title' => EXTLAN_82, 'type' => 'method', 'nolist'=>true, 'data' => 'str', 'width' => 'auto', 'inline' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
@@ -604,6 +604,11 @@ e107::js('footer-inline', js());
 
 		private function addPageActivate()
 		{
+			if(empty($_POST['activate']))
+			{
+				return null;
+			}
+
 			$ue = e107::getUserExt();
 			$tp = e107::getParser();
 			$ret = "";
@@ -620,14 +625,12 @@ e107::js('footer-inline', js());
 
 					if ($tmp[$f]['type']=="db field")
 					{
-						if (is_readable(e_CORE.'sql/extended_'.$f.'.php'))
-						{
-		           //     $ret .= ($this->process_sql($f)) ? LAN_CREATED." user_extended_{$f}<br />" : LAN_CREATED_FAILED." user_extended_{$f}<br />";
-						}
-						else
+						if (!is_readable(e_CORE.'sql/extended_'.$f.'.php'))
 						{
 							$ret .= str_replace('[x]',e_CORE.'sql/extended_'.$f.'.php',EXTLAN_78);
+		           //     $ret .= ($this->process_sql($f)) ? LAN_CREATED." user_extended_{$f}<br />" : LAN_CREATED_FAILED." user_extended_{$f}<br />";
 						}
+
 					}
 				}
 				else
@@ -644,6 +647,11 @@ e107::js('footer-inline', js());
 
 		private function addPageDeactivate()
 		{
+
+			if(empty($_POST['deactivate']))
+			{
+				return null;
+			}
 
 			$tp = e107::getParser();
 			$sql = e107::getDb();
@@ -686,6 +694,7 @@ e107::js('footer-inline', js());
 
 			// Get list of current extended fields
 			$curList = $ue->user_extended_get_fieldlist();
+			$curNames = array();
 			foreach($curList as $c)
 			{
 				$curNames[] = $c['user_extended_struct_name'];
@@ -720,7 +729,7 @@ e107::js('footer-inline', js());
 
 		    foreach($preList as $k=>$a)
 			{
-				if($k !='version') // don't know why this is appearing in the array.
+				if($k !== 'version') // don't know why this is appearing in the array.
 				{
 			        $active = (in_array($a['name'], $curNames)) ? TRUE : FALSE;
 					$txt .= $this->show_predefined_field($a,$active);
@@ -761,7 +770,7 @@ e107::js('footer-inline', js());
 			<tr>
 			<td>{$var['user_extended_struct_name']}</td>
 			<td>".constant(strtoupper($var['user_extended_struct_text'])."_DESC")."</td>
-			<td>".$ue->user_extended_edit($var,$uVal)."</td>
+			<td>".$ue->user_extended_edit($var,'')."</td>
 	        <td>".$tp->toHTML($var['type'], false, 'defs')."</td>
 			<td class='center'>".($active ? ADMIN_TRUE_ICON : "&nbsp;")."</td>
 			";
@@ -886,7 +895,23 @@ e107::js('footer-inline', js());
 
 		}
 
+		// Custom Method/Function
+		function user_extended_struct_name($curVal,$mode)
+		{
+			switch($mode)
+			{
+				case 'read': // List Page
+				case 'write': // Edit Page
+					return str_replace('plugin_', "<span class='label label-primary'>".LAN_PLUGIN."</span> ",$curVal);
+					break;
 
+
+				case 'filter':
+				case 'batch':
+					return  array();
+					break;
+			}
+		}
 
 
 		// Custom Method/Function
@@ -918,7 +943,7 @@ e107::js('footer-inline', js());
 
 			$current = $this->getController()->getModel()->getData();
 
-			$type = intval($current['user_extended_struct_type']);
+			$type = (int) varset($current['user_extended_struct_type']);
 
 			$val_hide = ($type !== EUF_DB_FIELD && $type !== EUF_TEXT && $type !== EUF_COUNTRY ) ? "visible" : "none";
 
@@ -1155,19 +1180,11 @@ e107::js('footer-inline', js());
 
 
 
-	new user_extended_adminArea();
+new user_extended_adminArea();
+require_once(e_ADMIN."auth.php");
+e107::getAdminUI()->runPage();
+require_once(e_ADMIN."footer.php");
 
-	require_once(e_ADMIN."auth.php");
-	e107::getAdminUI()->runPage();
-
-	require_once(e_ADMIN."footer.php");
-
-
-
-
-
-
-	exit;
 
 
 

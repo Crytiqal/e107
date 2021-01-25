@@ -20,10 +20,17 @@ e107::coreLan('signup');
 
 class signup_shortcodes extends e_shortcode
 {
+	public $template = array();
 
+	function sc_signup_coppa_text($parm=null)
+	{
+		$text = LAN_SIGNUP_77. " <a target='_blank' href='http://www.ftc.gov/privacy/coppafaqs.shtm'>". LAN_SIGNUP_14."</a>. ".
+		LAN_SIGNUP_15 . " " . e107::getParser()->emailObfuscate(SITEADMINEMAIL, LAN_SIGNUP_14) . " " . LAN_SIGNUP_16;
 
+		return $text;
+	}
 	
-	function sc_signup_coppa_form($parm)
+	function sc_signup_coppa_form($parm=null)
 	{
 		if (strpos(LAN_SIGNUP_77, "stage") !== FALSE)
 		{
@@ -47,7 +54,7 @@ class signup_shortcodes extends e_shortcode
 
 
 
-	function sc_signup_xup($param) // show it to those who were using xup
+	function sc_signup_xup($param=null) // show it to those who were using xup
 	{
 		switch ($param) 
 		{
@@ -63,7 +70,7 @@ class signup_shortcodes extends e_shortcode
 	}
 	
 	// TODO - template
-	function sc_signup_xup_login($parm)
+	function sc_signup_xup_login($parm=null)
 	{
 		if (!e107::getUserProvider()->isSocialLoginEnabled()) return '';
 
@@ -74,7 +81,7 @@ class signup_shortcodes extends e_shortcode
 	}
 	
 	// TODO - template
-	function sc_signup_xup_signup($parm)
+	function sc_signup_xup_signup($parm=null)
 	{
 		if (!e107::getUserProvider()->isSocialLoginEnabled()) return '';
 
@@ -146,7 +153,7 @@ class signup_shortcodes extends e_shortcode
 
 	function sc_signup_form_open()
 	{
-		return "<form action='".e_SELF."' method='post' id='signupform' autocomplete='off'><div>".e107::getForm()->token()."</div>";
+		return "<form action='".e_SELF."' method='post' id='signupform' class='signup-form form-horizontal' autocomplete='off'><div>".e107::getForm()->token()."</div>";
 	}
 	
 	/* example: {SIGNUP_SIGNUP_TEXT}
@@ -185,7 +192,7 @@ class signup_shortcodes extends e_shortcode
 		if (check_class($pref['displayname_class']))
 		{
 			$dis_name_len = varset($pref['displayname_maxlength'],15);
-			$val = ($_POST['username']) ? filter_var($_POST['username'], FILTER_SANITIZE_STRING) : '';
+			$val = !empty($_POST['username']) ? filter_var($_POST['username'], FILTER_SANITIZE_STRING) : '';
 			return e107::getForm()->text('username', $val,  $dis_name_len);
 
 		}
@@ -216,7 +223,7 @@ class signup_shortcodes extends e_shortcode
 			$options['class'] = vartrue($parm['class'],'');
 			$options['placeholder'] = vartrue($parm['placeholder']) ? $parm['placeholder']  : '';
 
-			$val = ($_POST['loginname']) ? filter_var($_POST['loginname'], FILTER_SANITIZE_STRING) : '';
+			$val = !empty($_POST['loginname']) ? filter_var($_POST['loginname'], FILTER_SANITIZE_STRING) : '';
 
 			return e107::getForm()->text('loginname', $val, $log_name_length, $options);
 		}
@@ -278,8 +285,12 @@ class signup_shortcodes extends e_shortcode
 		{
 			$options['placeholder'] = $parm['placeholder'];
 		}
+		elseif(!empty($preLen))
+		{
+			$text = defset('LAN_SIGNUP_125', "Min. [x] chars.");
+			$options['placeholder'] = e107::getParser()->lanVars($text, $preLen);
+		}
 
-		
 	//	$options['pattern'] = '\w{'.$len.',}'; // word of minimum length 
 	
 		return e107::getForm()->password('password1', '', 20, $options);
@@ -314,12 +325,16 @@ class signup_shortcodes extends e_shortcode
 				
 		return e107::getForm()->password('password2', '', 20, $options);
 	}
-	
-	
+
+
+	/**
+	 * @deprecated - placeholder in PASSWORD1 includes this.
+	 * @return null
+	 */
 	function sc_signup_password_len()
 	{
 		global $pref, $SIGNUP_PASSWORD_LEN;
-		if($pref['signup_pass_len'])
+		if($pref['signup_pass_len'] && !empty($SIGNUP_PASSWORD_LEN))
 		{
 			return $SIGNUP_PASSWORD_LEN;
 		}
@@ -359,8 +374,7 @@ class signup_shortcodes extends e_shortcode
 			
 		$options 				= array('size'=>30);
 		$options['required'] 	= ($pref==2) ? 1 : 0;
-		$options['class'] 		= 'tbox input-text e-email';  
-		$options['class']     = vartrue($parm['class'],'tbox input-text e-email');
+		$options['class']       = vartrue($parm['class'],'tbox input-text e-email');
 		$options['placeholder'] = vartrue($parm['placeholder'],'');
 
 		$val = !empty($_POST['email_confirm']) ? filter_var($_POST['email_confirm'], FILTER_SANITIZE_EMAIL) : '';
@@ -449,77 +463,82 @@ class signup_shortcodes extends e_shortcode
 		return $tp->simpleParse($USERCLASS_SUBSCRIBE_ROW, $shortcodes);*/
 
 	}
-	
-	
-	
-	function sc_signup_extended_user_fields($parm=null)
-	{ 
-		global $usere, $tp, $SIGNUP_EXTENDED_USER_FIELDS, $SIGNUP_EXTENDED_CAT;
+
+
+	function sc_signup_extended_user_fields($parm = null)
+	{
+		if(empty($this->template['extended-user-fields']))
+		{
+			return (ADMIN) ? "SIGNUP 'extended-user-fields' template not defined" : '';
+		}
+
+
 		$text = "";
-		
+
 		$search = array(
-		'{EXTENDED_USER_FIELD_TEXT}',
-		'{EXTENDED_USER_FIELD_REQUIRED}',
-		'{EXTENDED_USER_FIELD_EDIT}'
+			'{EXTENDED_USER_FIELD_TEXT}',
+			'{EXTENDED_USER_FIELD_REQUIRED}',
+			'{EXTENDED_USER_FIELD_EDIT}'
 		);
-		
-		
-		// What we need is a list of fields, ordered first by parent, and then by display order?
-		// category entries are `user_extended_struct_type` = 0
-		// 'unallocated' entries are `user_extended_struct_parent` = 0
-		
-		// Get a list of defined categories
-		$catList = $usere->user_extended_get_categories(FALSE);
+
+		/** @var e107_user_extended $ue */
+		$ue = e107::getUserExt();
+		$ue->init();
+		$tp = e107::getParser();
+
+		$catList = $ue->getCategories();
+
 		// Add in category zero - the 'no category' category
-		array_unshift($catList,array('user_extended_struct_parent' => 0, 'user_extended_struct_id' => '0'));
-		
-		
-		
+		array_unshift($catList, array('user_extended_struct_parent' => 0, 'user_extended_struct_id' => '0'));
+
 		foreach($catList as $cat)
 		{
-		  $extList = $usere->user_extended_get_fieldList($cat['user_extended_struct_id']);
-		
-		  $done_heading = FALSE;
-		  
-		  if(!count($extList))
-		  {
-			continue;	
-		  }
+			$extList = $ue->getFieldList($cat['user_extended_struct_id']);
 
+			$done_heading = false;
+
+			if(empty($extList))
+			{
+				continue;
+			}
 
 			foreach($extList as $ext)
 			{
-			     $opts = $parm;
-				if($ext['user_extended_struct_required'] == 1 || $ext['user_extended_struct_required'] == 2)
+				$opts = $parm;
+				$required = (int) $ext['user_extended_struct_required'];
+
+				if($required === 0) // "No - Will not show on Signup page".
 				{
-					if(!$done_heading && ($cat['user_extended_struct_id'] > 0))
-					{    // Add in a heading
-						$catName = $cat['user_extended_struct_text'] ? $cat['user_extended_struct_text'] : $cat['user_extended_struct_name'];
-						if(defined($catName))
-						{
-							$catName = constant($catName);
-						}
-						$text .= str_replace('{EXTENDED_CAT_TEXT}', $tp->toHTML($catName, false, 'emotes_off,defs'), $SIGNUP_EXTENDED_CAT);
-						$done_heading = true;
-					}
-
-					$label = $tp->toHTML(deftrue($ext['user_extended_struct_text'], $ext['user_extended_struct_text']), false, 'emotes_off,defs');
-
-                    if(isset($opts['placeholder']))
-                    {
-                        $opts['placeholder'] = str_replace('[label]', $label, $opts['placeholder']);
-                    }
-
-					$replace = array(
-						$label,
-						($ext['user_extended_struct_required'] == 1 ? $this->sc_signup_is_mandatory('true') : ''),
-						$usere->renderElement($ext, $_POST['ue']['user_' . $ext['user_extended_struct_name']], $opts)
-					);
-
-					$text .= str_replace($search, $replace, $SIGNUP_EXTENDED_USER_FIELDS);
+					continue;
 				}
+
+				if(!$done_heading && !empty($cat['user_extended_struct_id']))  // Add in a heading
+				{
+					$catName = $cat['user_extended_struct_text'] ? $cat['user_extended_struct_text'] : $cat['user_extended_struct_name'];
+					$catName = defset($catName, $catName);
+
+					$text .= str_replace('{EXTENDED_CAT_TEXT}', $tp->toHTML($catName, false, 'emotes_off,defs'), $this->template['extended-category']);
+					$done_heading = true;
+				}
+
+				$label = $tp->toHTML(deftrue($ext['user_extended_struct_text'], $ext['user_extended_struct_text']), false, 'emotes_off,defs');
+
+				if(isset($opts['placeholder']))
+				{
+					$opts['placeholder'] = str_replace('[label]', $label, $opts['placeholder']);
+				}
+
+				$replace = array(
+					$label,
+					($required === 1 ? $this->sc_signup_is_mandatory('true') : ''),
+					$ue->renderElement($ext, varset($_POST['ue']['user_' . $ext['user_extended_struct_name']]), $opts)
+				);
+
+				$text .= str_replace($search, $replace, $this->template['extended-user-fields']);
+
 			}
 		}
+
 		return $text;
 	}
 	
@@ -593,12 +612,10 @@ class signup_shortcodes extends e_shortcode
 			'signature' => 'signup_option_signature',
 		);
 
-		if((!empty($mandatory[$parm]) && (int) $pref[$mandatory[$parm]] === 2) || $parm === 'true' || ($parm === 'email' && empty($pref['disable_emailcheck'])))
+		if((!empty($parm) && !empty($mandatory[$parm]) && (int) $pref[$mandatory[$parm]] === 2) || $parm === 'true' || ($parm === 'email' && empty($pref['disable_emailcheck'])))
 		{
 			return "<span class='required'><!-- empty --></span>";
 		}
-
-
 
 		if(!empty($parm))
 		{
@@ -624,6 +641,13 @@ class signup_shortcodes extends e_shortcode
 		}
 
 		//return "<span class='required'></span>";
+	}
+
+	function sc_signup_button($parm=null)
+	{
+		$class = isset($parm['class']) ? $parm['class'] : "button btn btn-primary signup-button";
+
+		return "<input class='".$class."' type='submit' name='register' value=\"".LAN_SIGNUP_79."\" />\n";
 	}
 
 

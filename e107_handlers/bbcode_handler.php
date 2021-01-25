@@ -27,7 +27,7 @@ if (!defined('e107_INIT')) { exit; }
 class e_bbcode
 {
 	var $bbList;			// Caches the file contents for each bbcode processed
-	var $bbLocation;		// Location for each file - 'core' or a plugin name
+	var $bbLocation = array();		// Location for each file - 'core' or a plugin name
 	var $preProcess = FALSE;	// Set when processing bbcodes prior to saving
 	var $core_bb = array();
 	var $class = FALSE;
@@ -139,7 +139,7 @@ class e_bbcode
 		// $matches[4] - '=' or ':' according to the separator used
 		// $matches[5] - any parameter
 
-		$content = preg_split('#(\[(?:\w|/\w).*?\])#mis', $value, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE );
+		$content = preg_split('#(\[(?:\w|/\w).*?\])#ms', $value, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE );
 
 		foreach ($content as $cont)
 		{  // Each chunk is either a bbcode or a piece of text
@@ -224,7 +224,7 @@ class e_bbcode
 							else
 							{  // Opening code to process
 								// If its a single code, we can process it now. Otherwise just stack the value
-								if (array_key_exists('_'.$bbword,$this->bbLocation))
+								if (array_key_exists('_'.$bbword, $this->bbLocation))
 								{  // Single code to process
 									if (count($code_stack) == 0)
 									{
@@ -387,9 +387,21 @@ class e_bbcode
 		 *	@todo - capturing output deprecated
 		 */
 		ob_start();
-		$bbcode_return = eval($bbcode); //FIXME notice removal
-		$bbcode_output = ob_get_contents();
-		ob_end_clean();
+		try
+	    {
+			$bbcode_return = eval($bbcode); //FIXME notice removal
+	    }
+		catch (ParseError $e)
+		{
+			$error = $debugFile." -- ".$e->getMessage();
+		}
+
+		$bbcode_output = ob_get_clean();
+
+		if(!empty($error))
+		{
+			trigger_error($error, E_USER_NOTICE);
+		}
 
 		/* added to remove possibility of nested bbcode exploits ... */
 		if(strpos($bbcode_return, "[") !== FALSE)
@@ -416,7 +428,7 @@ class e_bbcode
 			return null;
 		}
 
-		if(substr(ltrim($text),0,6) == '[html]' && $type == 'img') // support for html img tags inside [html] bbcode.
+		if(strpos(ltrim($text), '[html]') === 0 && $type == 'img') // support for html img tags inside [html] bbcode.
 		{
 
 			$tmp = e107::getParser()->getTags($text,'img');
@@ -448,11 +460,11 @@ class e_bbcode
 			foreach($mtch[1] as $i)
 			{
 
-				if(substr($i,0,4)=='http')
+				if(strpos($i,'http') === 0)
 				{
 					$ret[] = $i;
 				}
-				elseif(substr($i,0,3)=="{e_")
+				elseif(strpos($i,"{e_") === 0)
 				{
 					$ret[] = $tp->replaceConstants($i,'full');
 				}
@@ -827,7 +839,7 @@ class e_bbcode
     
         
 
-		if(substr($text,0,6)=='[html]')
+		if(strpos($text,'[html]') === 0)
 		{
 			return $text;
 		}

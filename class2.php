@@ -71,6 +71,26 @@ if(!isset($_E107['cli']))
 	ob_start();             // start our own.
 	$oblev_at_start = ob_get_level(); 	// preserve when destroying globals in step C
 }
+
+if(!empty($_E107['minimal']))
+{
+	$_E107['no_prunetmp'] = true;
+	$_E107['no_menus'] = true;
+	$_E107['no_theme'] = true;
+	$_E107['no_online'] = true;
+	$_E107['no_lan'] = true;
+	$_E107['no_module'] = true;
+	$_E107['no_maintenance'] = true;
+	$_E107['no_forceuserupdate'] = true;
+	$_E107['no_event'] = true;
+	$_E107['no_session'] = true;
+//	$_E107['no_parser'] = true;
+	$_E107['no_override'] = true;
+	$_E107['no_log'] = true;
+//	$_E107['no_autoload'] = true;
+}
+
+
 //
 // C: Find out if register globals is enabled and destroy them if so
 // (DO NOT use the value of any variables before this point! They could have been set by the user)
@@ -113,18 +133,6 @@ if(!defined('e_ROOT'))
 	unset($e_ROOT);
 }
 
-// MOVED TO $e107->prepare_request()
-// e107 uses relative url's, which are broken by "pretty" URL's. So for now we don't support / after .php
-//if(($pos = strpos($_SERVER['PHP_SELF'], '.php/')) !== false) // redirect bad URLs to the correct one.
-//{
-//	$new_url = substr($_SERVER['PHP_SELF'], 0, $pos+4);
-//	$new_loc = ($_SERVER['QUERY_STRING']) ? $new_url.'?'.$_SERVER['QUERY_STRING'] : $new_url;
-//	header('Location: '.$new_loc);
-//	exit();
-//}
-// If url contains a .php in it, PHP_SELF is set wrong (imho), affecting all paths.  We need to 'fix' it if it does.
-//$_SERVER['PHP_SELF'] = (($pos = strpos($_SERVER['PHP_SELF'], '.php')) !== false ? substr($_SERVER['PHP_SELF'], 0, $pos+4) : $_SERVER['PHP_SELF']);
-
 //
 // D: Setup PHP error handling
 //    (Now we can see PHP errors) -- but note that DEBUG is not yet enabled!
@@ -136,15 +144,6 @@ $error_handler = new error_handler();
 // E: Setup other essential PHP parameters
 //
 define('e107_INIT', true);
-
-
-// MOVED TO $e107->prepare_request()
-// setup some php options
-//e107_ini_set('magic_quotes_runtime',     0);
-//e107_ini_set('magic_quotes_sybase',      0);
-//e107_ini_set('arg_separator.output',     '&amp;');
-//e107_ini_set('session.use_only_cookies', 1);
-//e107_ini_set('session.use_trans_sid',    0);
 
 
 // DEPRECATED, use e107::getConfig() and e107::getPlugConfig()
@@ -159,47 +158,6 @@ else
 {
 	unset($retrieve_prefs);
 }
-
-// MOVED TO e107->set_constants()
-//define("MAGIC_QUOTES_GPC", (ini_get('magic_quotes_gpc') ? true : false));
-//
-//// Define the domain name and subdomain name.
-//if($_SERVER['HTTP_HOST'] && is_numeric(str_replace(".","",$_SERVER['HTTP_HOST'])))
-//{
-//	$srvtmp = '';  // Host is an IP address.
-//}
-//else
-//{
-//	$srvtmp = explode('.',str_replace('www.', '', $_SERVER['HTTP_HOST']));
-//}
-//
-//define('e_SUBDOMAIN', (count($srvtmp)>2 && $srvtmp[2] ? $srvtmp[0] : false)); // needs to be available to e107_config.
-//
-//if(e_SUBDOMAIN)
-//{
-//   	unset($srvtmp[0]);
-//}
-//
-//define('e_DOMAIN',(count($srvtmp) > 1 ? (implode('.', $srvtmp)) : false)); // if it's an IP it must be set to false.
-//
-//unset($srvtmp);
-
-
-// MOVED TO $e107->prepare_request()
-//  Ensure thet '.' is the first part of the include path
-//$inc_path = explode(PATH_SEPARATOR, ini_get('include_path'));
-//if($inc_path[0] != '.')
-//{
-//	array_unshift($inc_path, '.');
-//	$inc_path = implode(PATH_SEPARATOR, $inc_path);
-//	e107_ini_set('include_path', $inc_path);
-//}
-//unset($inc_path);
-
-//
-// F: Grab e107_config, get directory paths and create $e107 object
-//
-
 
 @include(e_ROOT.'e107_config.php');
 
@@ -291,56 +249,14 @@ if(!defined('e_SECURITY_LEVEL'))
 	define('e_SECURITY_LEVEL', e_session::SECURITY_LEVEL_BALANCED);
 }
 
-// MOVED TO $e107->set_request()
-//$inArray = array("'", ';', '/**/', '/UNION/', '/SELECT/', 'AS ');
-//if (strpos($_SERVER['PHP_SELF'], 'trackback') === false)
-//{
-//	foreach($inArray as $res)
-//	{
-//		if(stristr($_SERVER['QUERY_STRING'], $res))
-//		 {
-//			die('Access denied.');
-//		}
-//	}
-//}
-
-
-
 //
 // Start the parser; use it to grab the full query string
 //
+if(!isset($_E107['no_parser']))
+{
+	$tp = e107::getParser(); //TODO - find & replace $tp, $e107->tp
+}
 
-//DEPRECATED, BC
-//$e107->url = e107::getUrl(); - caught by __get()
-//TODO - find & replace $e107->url
-//DEPRECATED, BC, $e107->tp caught by __get()
-$tp = e107::getParser(); //TODO - find & replace $tp, $e107->tp
-
-//define("e_QUERY", $matches[2]);
-//define("e_QUERY", $_SERVER['QUERY_STRING']);
-
-
-// MOVED TO $e107->set_request()
-//$e_QUERY = str_replace("&","&amp;",$tp->post_toForm($e_QUERY));
-//define('e_QUERY', $e_QUERY);
-
-//$e_QUERY = e_QUERY;
-
-// MOVED TO $e107->set_request()
-//define('e_TBQS', $_SERVER['QUERY_STRING']);
-//$_SERVER['QUERY_STRING'] = e_QUERY;
-
-// MOVED TO $e107->set_constants()
-//define('e_UC_PUBLIC', 0);
-//define('e_UC_MAINADMIN', 250);
-//define('e_UC_READONLY', 251);
-//define('e_UC_GUEST', 252);
-//define('e_UC_MEMBER', 253);
-//define('e_UC_ADMIN', 254);
-//define('e_UC_NOBODY', 255);
-
-// MOVED TO $e107->set_urls() - DEPRECATED, use e107->getFolder()
-//define('ADMINDIR', $ADMIN_DIRECTORY);
 
 //
 // H: Initialize debug handling
@@ -349,8 +265,12 @@ $tp = e107::getParser(); //TODO - find & replace $tp, $e107->tp
 // i.e. from here on you can use E107_DEBUG_LEVEL or any
 // E107_DBG_* constant for debug testing.
 //
+
+
+
 require_once(e_HANDLER.'debug_handler.php');
 e107_debug::init(); // defines E107_DEBUG_LEVEL
+/** @var e107_db_debug $dbg */
 $dbg = e107::getDebug();
 
 if(E107_DEBUG_LEVEL)
@@ -378,8 +298,6 @@ if(E107_DEBUG_LEVEL)
 e107::getSingleton('e107_traffic'); // We start traffic counting ASAP
 //$eTraffic->Calibrate($eTraffic);
 
-// e107_require_once(e_HANDLER.'mysql_class.php');
-
 //DEPRECATED, BC, $e107->sql caught by __get()
 /** @var e_db $sql */
 $sql = e107::getDb(); //TODO - find & replace $sql, $e107->sql
@@ -395,8 +313,10 @@ $sql2 = e107::getDb('sql2'); //TODO find & replace all $sql2 calls
 $dbg->logTime('Prefs, misc tables');
 
 //DEPRECATED, BC, call the method only when needed, $e107->admin_log caught by __get()
-$admin_log = e107::getAdminLog(); //TODO - find & replace $admin_log, $e107->admin_log
-
+if(!isset($_E107['no_log']))
+{
+	$admin_log = e107::getLog(); //TODO - find & replace $admin_log, $e107->admin_log
+}
 	if($merror === 'e1')
 	{
 		message_handler('CRITICAL_ERROR', 6, ': generic, ', 'class2.php');
@@ -436,8 +356,10 @@ $eArrayStorage = e107::getArrayStorage();  //TODO - find & replace $eArrayStorag
 
 //DEPRECATED, BC, call the method only when needed, $e107->e_event caught by __get()
 $dbg->logTime('Load Event Handler');
-$e_event = e107::getEvent(); //TODO - find & replace $e_event, $e107->e_event
-
+if(!isset($_E107['no_event']))
+{
+	$e_event = e107::getEvent(); //TODO - find & replace $e_event, $e107->e_event
+}
 // TODO - DEPRECATED - remove
 
 $dbg->logTime('Load Core Prefs');
@@ -452,7 +374,7 @@ if(!e107::getConfig()->hasData())
 {
 
 	// Core prefs error - admin log
-	e107::getAdminLog()->log_event('CORE_LAN8', 'CORE_LAN7', E_LOG_WARNING);
+	e107::getLog()->add('CORE_LAN8', 'CORE_LAN7', E_LOG_WARNING);
 
 	// Try for the automatic backup..
 	if(e107::getConfig('core_backup')->hasData())
@@ -469,7 +391,7 @@ if(!e107::getConfig()->hasData())
 		if(!e107::getConfig('core_old')->hasData())
 		{
 			// Core could not restore from automatic backup. Execution halted.
-			e107::getAdminLog()->log_event('CORE_LAN8', 'CORE_LAN9', E_LOG_FATAL);
+			e107::getLog()->add('CORE_LAN8', 'CORE_LAN9', E_LOG_FATAL);
 
 			message_handler('CRITICAL_ERROR', 3, __LINE__, __FILE__);
 			// No old system, so point in the direction of resetcore :(
@@ -492,7 +414,7 @@ if(!e107::getConfig()->hasData())
 //DEPRECATED, BC, call e107::getPref/findPref() instead
 $pref = e107::getPref();
 
-if(e_ADMIN_AREA !== true && !empty($pref['thumb_to_webp']))
+if(e_ADMIN_AREA !== true && !isset($_E107['no_parser']) && !empty($pref['thumb_to_webp']))
 {
 	$tp->setConvertToWebP(true);
 }
@@ -501,9 +423,11 @@ if(e_ADMIN_AREA !== true && !empty($pref['thumb_to_webp']))
 // $e107->set_base_path(); moved to init().
 
 //DEPRECATED, BC, call e107::getConfig('menu')->get('pref_name') only when needed
-$dbg->logTime('Load Menu Prefs');
-$menu_pref = e107::getConfig('menu')->getPref(); //extract menu prefs
-
+if(!isset($_E107['no_menus']))
+{
+	$dbg->logTime('Load Menu Prefs');
+	$menu_pref = e107::getConfig('menu')->getPref(); //extract menu prefs
+}
 // NEW - force ssl
 if(empty($_E107['cli']) && e107::getPref('ssl_enabled') &&  !deftrue('e_SSL_DISABLE') )
 {
@@ -519,11 +443,16 @@ if(empty($_E107['cli']) && e107::getPref('ssl_enabled') &&  !deftrue('e_SSL_DISA
 }
 
 // $dbg->logTime('(Extracting Core Prefs Done)');
-
-$dbg->logTime('Init Language and detect changes');
-$lng = e107::getLanguage(); // required for v1.0 BC. 
-$lng->detect();
-
+if(!isset($_E107['no_lan']))
+{
+	$dbg->logTime('Init Language and detect changes');
+	$lng = e107::getLanguage(); // required for v1.0 BC.
+	$lng->detect();
+}
+else
+{
+	define('e_LAN', 'en');
+}
 //
 // M: Subdomain and Language Selection
 //
@@ -620,10 +549,18 @@ if(!empty($pref['redirectsiteurl']) && !empty($pref['siteurl'])) {
 // - Language detection (because of session.cookie_domain)
 // to avoid multi-language 'access-denied' issues.
 //session_start(); see e107::getSession() above
-$dbg->logTime('Load Session Handler');
-e107::getSession(); //init core _SESSION - actually here for reference only, it's done by language handler set() method
-$dbg->logTime('Set User Language Session');
-e107::getLanguage()->set();  // set e_LANGUAGE, USERLAN, Language Session / Cookies etc. requires $pref;
+if(!isset($_E107['no_session']) && !isset($_E107['no_lan']))
+{
+	$dbg->logTime('Load Session Handler');
+	e107::getSession(); //init core _SESSION - actually here for reference only, it's done by language handler set() method
+
+	$dbg->logTime('Set User Language Session');
+	e107::getLanguage()->set();  // set e_LANGUAGE, USERLAN, Language Session / Cookies etc. requires $pref;
+}
+else
+{
+	define('e_LANGUAGE', 'English');
+}
 
 if(!empty($pref['multilanguage']) && (e_LANGUAGE !== $pref['sitelanguage']))
 {
@@ -635,56 +572,60 @@ if(!empty($pref['multilanguage']) && (e_LANGUAGE !== $pref['sitelanguage']))
 // e107_include_once(e_LANGUAGEDIR.e_LANGUAGE.'/'.e_LANGUAGE.'.php');
 // e107_include_once(e_LANGUAGEDIR.e_LANGUAGE.'/'.e_LANGUAGE.'_custom.php');
 // v1 Custom language File Path.
-$dbg->logTime('Include Global Core Language Files');
-if((e_ADMIN_AREA === true) && !empty($pref['adminlanguage']))
+if(!isset($_E107['no_lan']))
 {
-	include(e_LANGUAGEDIR.$pref['adminlanguage'].'/'.$pref['adminlanguage'].'.php');
-}
-else
-{
-	include(e_LANGUAGEDIR.e_LANGUAGE.'/'.e_LANGUAGE.'.php'); // FASTEST - ALWAYS load
-}
-
-
-$customLan = e_LANGUAGEDIR.e_LANGUAGE.'/'.e_LANGUAGE.'_custom.php';
-if(is_readable($customLan)) // FASTER - if exist, should be done 'once' by the core
-{
-	include($customLan);
-}
-
-// v2 Custom language File Path. 
-$customLan2 = e_SYSTEM.'/lans/'.e_LANGUAGE.'_custom.php';
-if(is_readable($customLan2)) // FASTER - if exist, should be done 'once' by the core
-{
-	include($customLan2);
-}
-unset($customLan, $customLan2);
-
-$lng->bcDefs(); // defined v1.x definitions for old templates.
-
-$dbg->logTime('Include Global Plugin Language Files');
-if(isset($pref['lan_global_list']))
-{
-	foreach($pref['lan_global_list'] as $path)
+	$dbg->logTime('Include Global Core Language Files');
+	if((e_ADMIN_AREA === true) && !empty($pref['adminlanguage']))
 	{
-		if(e107::plugLan($path, 'global', true) === false)
-		{
-			e107::plugLan($path, 'global');
-		}
+		include(e_LANGUAGEDIR.$pref['adminlanguage'].'/'.$pref['adminlanguage'].'.php');
+	}
+	else
+	{
+		include(e_LANGUAGEDIR.e_LANGUAGE.'/'.e_LANGUAGE.'.php'); // FASTEST - ALWAYS load
+	}
 
-	}			
+
+	$customLan = e_LANGUAGEDIR.e_LANGUAGE.'/'.e_LANGUAGE.'_custom.php';
+	if(is_readable($customLan)) // FASTER - if exist, should be done 'once' by the core
+	{
+		include($customLan);
+	}
+
+	// v2 Custom language File Path.
+	$customLan2 = e_SYSTEM.'/lans/'.e_LANGUAGE.'_custom.php';
+	if(is_readable($customLan2)) // FASTER - if exist, should be done 'once' by the core
+	{
+		include($customLan2);
+	}
+	unset($customLan, $customLan2);
+
+	$lng->bcDefs(); // defined v1.x definitions for old templates.
+
+	$dbg->logTime('Include Global Plugin Language Files');
+
+	if(isset($pref['lan_global_list']))
+	{
+		foreach($pref['lan_global_list'] as $path)
+		{
+			if(e107::plugLan($path, 'global', true) === false)
+			{
+				e107::plugLan($path, 'global');
+			}
+
+		}
+	}
 }
 
+if(!isset($_E107['no_session']))
+{
+	$dbg->logTime('CHAP challenge');
 
-
-$dbg->logTime('CHAP challenge');
-
-$die = e_AJAX_REQUEST !== true;
-e107::getSession()
-	->challenge() // Make sure there is a unique challenge string for CHAP login
-	->check($die); // Token protection
-unset($die);
-	
+	$die = e_AJAX_REQUEST !== true;
+	e107::getSession()
+		->challenge() // Make sure there is a unique challenge string for CHAP login
+		->check($die); // Token protection
+	unset($die);
+}
 //
 // N: misc setups: online user tracking, cache
 //
@@ -697,37 +638,48 @@ $dbg->logTime('Misc resources. Online user tracking, cache');
 $e107cache = e107::getCache(); //TODO - find & replace $e107cache, $e107->ecache
 
 //DEPRECATED, BC, call the method only when needed, $e107->override caught by __get()
-$override = e107::getSingleton('override');
-
+if(!isset($_E107['no_override']))
+{
+	$override = e107::getSingleton('override');
+}
 //DEPRECATED, BC, call the method only when needed, $e107->user_class caught by __get()
-$e_userclass = e107::getUserClass();  //TODO - find & replace $e_userclass, $e107->user_class
+if(!isset($_E107['no_session']))
+{
+	$e_userclass = e107::getUserClass();  //TODO - find & replace $e_userclass, $e107->user_class
+}
 
-$dbg->logTime('Init Event Handler');
-e107::getEvent()->init();
-$dbg->logTime('Register Core Events');
-e107::getNotify()->registerEvents();
 
+if(!isset($_E107['no_event']))
+{
+	$dbg->logTime('Init Event Handler');
+	e107::getEvent()->init();
+	$dbg->logTime('Register Core Events');
+	e107::getNotify()->registerEvents();
+}
 //
 // O: Start user session
 //
-$dbg->logTime('User session');
-init_session();			// Set up a lot of the user-related constants
 
-
-
-/**
- * @deprecated but necessary. BC Fix.
- * @return string
- */
-function getip()
+if(!isset($_E107['no_session']))
 {
-	return e107::getIPHandler()->ipDecode(USERIP);
+	$dbg->logTime('User session');
+	init_session();			// Set up a lot of the user-related constants
 }
+else
+{
+	define('ADMIN', false);
+	define('USER', true);
+	define('USERCLASS_LIST', '0');
+}
+
+
+
 
 
 $developerMode = (vartrue($pref['developer'],false) || E107_DEBUG_LEVEL > 0);
 
-// for multi-language these definitions needs to come after the language loaded.
+
+	// for multi-language these definitions needs to come after the language loaded.
 if(!defined('SITENAME')) // Allow override by English_custom.php or English_global.php plugin files.
 {
 	define('SITENAME', trim($tp->toHTML($pref['sitename'], '', 'USER_TITLE,er_on,defs')));
@@ -806,127 +758,33 @@ $dbg->logTime('Load Plugin Modules');
 $js_body_onload = array();			// Initialise this array in case a module wants to add to it
 
 // Load e_modules after all the constants, but before the themes, so they can be put to use.
-if(isset($pref['e_module_list']) && $pref['e_module_list'])
+if(!isset($_E107['no_module']))
 {
-	foreach ($pref['e_module_list'] as $mod)
+	if(isset($pref['e_module_list']) && $pref['e_module_list'])
 	{
-		if (is_readable(e_PLUGIN."{$mod}/e_module.php"))
+		foreach ($pref['e_module_list'] as $mod)
 		{
-			$dbg->logTime('[e_module in '.$mod.']');
-			require_once(e_PLUGIN."{$mod}/e_module.php");
- 		}
+			if (is_readable(e_PLUGIN."{$mod}/e_module.php"))
+			{
+				$dbg->logTime('[e_module in '.$mod.']');
+				require_once(e_PLUGIN."{$mod}/e_module.php");
+	        }
+		}
 	}
 }
-
 
 //
 // P: THEME LOADING
 //
 
-$dbg->logTime('Load Theme');
 
-if(!defined('USERTHEME'))
+
+if(!defined('USERTHEME') && !isset($_E107['no_theme']))
 {
+	$dbg->logTime('Load Theme');
 	define('USERTHEME', (e107::getUser()->getPref('sitetheme') && file_exists(e_THEME.e107::getUser()->getPref('sitetheme'). '/theme.php') ? e107::getUser()->getPref('sitetheme') : false));
 }
 
-//###########  Module redefinable functions ###############
-if (!function_exists('checkvalidtheme'))
-{
-
-	function checkvalidtheme($theme_check)
-	{
-		// arg1 = theme to check
-		//global $ADMIN_DIRECTORY, $tp, $e107;
-	//	global $sql;
-		$sql = e107::getDb();
-		$e107 = e107::getInstance();
-		$tp = e107::getParser();
-		$ADMIN_DIRECTORY = $e107->getFolder('admin');
-		
-		// e_QUERY not set when in single entry mod
-		if (ADMIN && strpos($_SERVER['QUERY_STRING'], 'themepreview') !== false)
-		{
-			list($action, $id) = explode('.', $_SERVER['QUERY_STRING']);
-
-	   		require_once(e_HANDLER.'theme_handler.php');
-			$themeobj = new themeHandler;
-            $themeArray = $themeobj->getThemes('id');
-
-            $id = (int) $id;
-
- 			$themeDef = $themeobj->findDefault($themeArray[$id]);
-			
-            define('THEME_LAYOUT',$themeDef);
-
-			define('PREVIEWTHEME', e_THEME.$themeArray[$id].'/');
-			define('PREVIEWTHEMENAME', $themeArray[$id]);
-			define('THEME', e_THEME.$themeArray[$id].'/');
-			define('THEME_ABS', e_THEME_ABS.$themeArray[$id].'/');
-
-			$legacy = (file_exists( e_THEME_ABS.$themeArray[$id].'/theme.xml') === false);
-
-			define('THEME_LEGACY',$legacy);
-			unset($action);
-			
-			return;
-		}
-
-		e107::getDebug()->logTime('Theme Check');
-
-		if (@fopen(e_THEME.$theme_check.'/theme.php', 'r'))
-	//	if (is_readable(e_THEME.$theme_check.'/theme.php'))
-		{
-			define('THEME', e_THEME.$theme_check.'/');
-			define('THEME_ABS', e_THEME_ABS.$theme_check.'/');
-
-			$legacy = (file_exists(e_THEME.$theme_check.'/theme.xml') === false);
-
-			define('THEME_LEGACY',$legacy);
-
-			$e107->site_theme = $theme_check;
-		}
-		else
-		{
-			function search_validtheme()
-			{
-				$e107 = e107::getInstance();
-				$th = substr(e_THEME, 0, -1);
-				$handle = opendir($th);
-				while ($file = readdir($handle))
-				{
-					if (is_dir(e_THEME.$file) && is_readable(e_THEME.$file.'/theme.php'))
-					{
-						closedir($handle);
-						$e107->site_theme = $file;
-						return $file;
-					}
-				}
-				closedir($handle);
-				return null;
-			}
-
-			$e107tmp_theme = 'bootstrap3'; // set to bootstrap3 by default.  search_validtheme();
-			define('THEME', e_THEME.$e107tmp_theme.'/');
-			define('THEME_ABS', e_THEME_ABS.$e107tmp_theme.'/');
-			if (ADMIN && strpos(e_SELF, $ADMIN_DIRECTORY) === false)
-			{
-				echo '<script>alert("'.$tp->toJS(CORE_LAN1).'")</script>';
-				$tm = e107::getSingleton('themeHandler');
-				$tm->setTheme($e107tmp_theme);
-			//	$config = e107::getConfig();
-			//	$config->set('sitetheme','core');
-				
-			}
-		}
-		e107::getDebug()->logTime('Theme Check End');
-
-		$themes_dir = $e107->getFolder('themes');
-		$e107->http_theme_dir = "{$e107->server_path}{$themes_dir}{$e107->site_theme}/";
-
-		unset($sql);
-	}
-}
 
 //
 // Q: ALL OTHER SETUP CODE
@@ -934,359 +792,19 @@ if (!function_exists('checkvalidtheme'))
 $dbg->logTime('Misc Setup');
 
 //------------------------------------------------------------------------------------------------------------------------------------//
-if (!class_exists('e107table', false))
+
+if(!isset($_E107['no_theme']))
 {
-	/**
-	 *	@package e107
-	 */
-	class e107table
+	$ns = e107::getRender(); //  load theme render class.
+
+	if (!class_exists('e107table', false))  // BC Fix.
 	{
-
-    	public 	$eMenuCount = 0;
-		public 	$eMenuArea;
-		public 	$eMenuTotal = array();
-		public 	$eSetStyle;
-		private $themeClass = 'theme';  // v2.3.0+
-		private $legacyThemeClass;
-		private $adminThemeClass;
-		public  $frontend = false;
-		private $uniqueId = null;
-		private $content = array();
-		private $contentTypes = array('header','footer','text','title','image', 'list');
-		private $mainRenders = array(); // all renderered with style = 'default' or 'main'.
-		private $thm;
-
-		
-		public function init()
-		{
-			$this->legacyThemeClass  = e107::getPref('sitetheme'). '_theme'; // disabled at the moment.
-			$this->adminThemeClass 	= e107::getPref('admintheme'). '_admintheme';	// Check for a class.
-
-            $this->load();
-		}
-
-        /**
-         * Load theme class if necessary.
-         * @return null
-         */
-        private function load()
-        {
-            if(!empty($this->thm))
-            {
-                return null;
-            }
-
-            if(($this->frontend === false) && class_exists($this->adminThemeClass))
-			{
-				/** @var e_theme_render $thm */
-				$this->thm = new $this->adminThemeClass();
-			}
-			elseif(class_exists($this->themeClass)) // v2.3.0+
-            {
-
-                if(ADMIN && $this->hasLegacyCode()) // debug - no translation needed.
-                {
-                    echo "<div class='alert alert-danger'>Please place all theme code inside the <b>theme</b> class. </div>";
-                }
-
-                /** @var e_theme_render $thm */
-				$this->thm = new $this->themeClass();
-
-				if(ADMIN && !$this->thm instanceof e_theme_render)
-				{
-				    // debug - no need to translate.
-                    echo "<div class='alert alert-danger'>class <b>".$this->themeClass."</b> is missing 'implements e_theme_render'</div>";
-                }
-            }
-			elseif(class_exists($this->legacyThemeClass)) // legacy v2.x
-			{
-				/** @var e_theme_render $thm */
-				$this->thm = new $this->legacyThemeClass();
-			}
-
-            return null;
-        }
-
-
-		/**
-		 * Return content options for the main render that uses {SETSTYLE=default} or {SETSTYLE=main}
-		 * @return array
-		 */
-		private function getMainRender()
-		{
-			if(isset($this->mainRenders[0]))
-			{
-				return $this->mainRenders[0];
-			}
-
-			return array();
-
-		}
-
-
-		/**
-		 * Return the first caption rendered with {SETSTYLE=default} or {SETSTYLE=main}
-		 * @return string|null
-		 */
-		public function getMainCaption()
-		{
-			if(isset($this->mainRenders[0]['caption']))
-			{
-				return $this->mainRenders[0]['caption'];
-			}
-
-			return null;
-		}
-
-
-		function getMagicShortcodes()
-		{
-			$ret = array();
-
-			$val = $this->getMainRender();
-
-			$types = array('caption') + $this->contentTypes;
-
-			foreach($types as $var)
-			{
-				$sc = '{---'.strtoupper($var).'---}';
-				$ret[$sc] = isset($val[$var]) ? (string) $val[$var] : null;
-			}
-
-			$bread = e107::breadcrumb();
-			$ret['{---BREADCRUMB---}'] = e107::getForm()->breadcrumb($bread);
-
-			return $ret;
-
-		}
-
-		/**
-		 * Set the style mode for use in tablestyle() method/function
-		 * @param string $style
-		 */
-		public function setStyle($style)
-		{
-			$this->eSetStyle = (string) $style;
-		}
-
-		/**
-		 * Set a unique id for use in tablestyle() method/function
-		 *
-		 * @param string $id
-		 * @return e107table
-		 */
-		public function setUniqueId($id)
-		{
-			$this->uniqueId = !empty($id) ? eHelper::dasherize($id) : null;
-			return $this;
-		}
-
-
-		/**
-		 * Set Advanced Page/Menu content (beyond just $caption and $text)
-		 *
-		 * @param string|array $type header|footer|text|title|image|list
-		 * @param string $val
-		 * @return bool|e107table
-		 */
-		public function setContent($type, $val)
-		{
-			if(is_array($type))
-			{
-				foreach($this->contentTypes as $t)
-				{
-					$this->content[$t] = (string) $type[$t];
-				}
-			}
-
-
-			if(!in_array($type, $this->contentTypes, true))
-			{
-				return false;
-			}
-
-			if($this->uniqueId !== null)
-			{
-				$key = $this->uniqueId;
-			}
-			else
-			{
-				$key = '_generic_';
-				e107::getDebug()->log("Possible issue: Missing a Unique Tablerender ID. Use \$ns->setUniqueId() in the plugin script prior to setContent(). See 'source code' for more information."); // debug only, no LAN.
-			}
-
-			$this->content[$key][$type] = (string) $val;
-
-			return $this;
-		}
-
-
-		/**
-		 * Return the value of custom content
-		 * @param string $type header|footer|text|title|image|list
-		 * @return array
-		 */
-		public function getContent($type='')
-		{
-			$key = ($this->uniqueId !== null) ? $this->uniqueId : '_generic_';
-
-			if(empty($type))
-			{
-				return $this->content[$key];
-			}
-
-
-			return $this->content[$key][$type];
-
-		}
-
-
-		/**
-		 * Return the current value of {SETSTYLE}
-		 * @return mixed
-		 */
-		public function getStyle()
-		{
-			return $this->eSetStyle;
-		}
-
-
-		/**
-		 * Return the currenty set uniqueId.
-		 * @return mixed
-		 */
-		public function getUniqueId()
-		{
-			return $this->uniqueId;
-		}
-
-
-		/**
-		 * @param string $caption caption text
-		 * @param string $text
-		 * @param string $mode unique identifier
-		 * @param boolean $return  : return the html instead of echo it.
-		 * @return null
-		 */
-		public function tablerender($caption, $text, $mode = 'default', $return = false)
+		class e107table extends e_render
 		{
 
-
-			$override_tablerender = e107::getSingleton('override', e_HANDLER.'override_class.php')->override_check('tablerender');
-
-			if ($override_tablerender)
-			{
-				$result = $override_tablerender($caption, $text, $mode, $return);
-
-				if ($result === 'return')
-				{
-					return '';
-				}
-				extract($result);
-			}
-
-
-			if ($return)
-			{
-            	if(!empty($text) && $this->eMenuArea)
-				{
-					$this->eMenuCount++;
-				}
-				
-				ob_start();
-				$this->tablestyle($caption, $text, $mode);
-
-				return ob_get_clean();
-
-			}
-
-			if(!empty($text) && $this->eMenuArea)
-			{
-				$this->eMenuCount++;
-			}
-
-			$this->tablestyle($caption, $text, $mode);
-
-			return '';
 		}
-
-
-        private function hasLegacyCode()
-        {
-            $legacy = ['VIEWPORT','THEME_DISCLAIMER', 'IMODE', 'BODYTAG', 'COMMENTLINK', 'OTHERNEWS_LIMIT',
-                        'PRE_EXTENDEDSTRING', 'COMMENTOFFSTRING', 'CORE_CSS'];
-
-            foreach($legacy as $const)
-            {
-                if(defined($const))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-
-        }
-
-
-		/**
-		 * Output the styled template. 
-		 * @param $caption
-		 * @param $text
-		 * @param $mode
-		 */
-		private function tablestyle($caption, $text, $mode)
-		{
-
-
-
-			// Automatic list detection .
-			$isList = (strncmp(ltrim($text), '<ul', 3) === 0 );
-			$this->setContent('list', $isList);
-
-			$options = $this->getContent();
-
-			$options['uniqueId'] = (string) $this->uniqueId;
-			$options['menuArea'] = (int) $this->eMenuArea;
-			$options['menuCount'] = (int) $this->eMenuCount;
-			$options['menuTotal'] = (int) varset($this->eMenuTotal[$this->eMenuArea]);
-			$options['setStyle'] = (string) $this->eSetStyle;
-
-			$options['caption'] = e107::getParser()->toText($caption);
-
-			if($this->eSetStyle === 'default' || $this->eSetStyle === 'main')
-			{
-				$this->mainRenders[] = $options;
-			}
-
-			//XXX Optional feature may be added if needed - define magic shortcodes inside $thm class. eg. function msc_custom();
-			
-			if(!empty($this->thm) && is_object($this->thm))
-			{
-				$this->thm->tablestyle($caption, $text, $mode, $options);
-			}
-			elseif(function_exists('tablestyle'))
-			{
-				tablestyle($caption, $text, $mode, $options);
-			}
-
-			$key = ($this->uniqueId !== null) ? $this->uniqueId : '_generic_';
-			$this->content[$key] = array();
-			$this->uniqueId = null;
-
-		}
-
-
 	}
-
-	
-
-
 }
-//#############################################################
-
-//DEPRECATED, BC, call the method only when needed, $e107->ns caught by __get()
-$ns = e107::getRender(); //  load theme class.
 
 // EONE-134 - bad e_module could destroy e107 instance
 $e107 = e107::getInstance();		// Is this needed now?
@@ -1344,7 +862,7 @@ if (($_SERVER['QUERY_STRING'] === 'logout')/* || (($pref['user_tracking'] == 'se
 		}
 	}
 
-	// $ip = e107::getIPHandler()->getIP(FALSE);			Appears to not be used, so removed
+	// $ip = e107::getIPHandler()->getIP(false);			Appears to not be used, so removed
 	$udata = (USER === true ? USERID.'.'.USERNAME : '0');
 
 	// TODO - should be done inside online handler, more core areas need it (session handler for example)
@@ -1466,80 +984,52 @@ define('TIMEOFFSET', $e_deltaTime);
 
 
 // ----------------------------------------------------------------------------
-$dbg->logTime('Find/Load Theme');
 
-if(e_ADMIN_AREA) // Load admin phrases ASAP
+
+if(e_ADMIN_AREA && !isset($_E107['no_lan'])) // Load admin phrases ASAP
 {
 	e107::includeLan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_admin.php');
 }
 
 
-if(!defined('THEME'))
+if(!defined('THEME') && !isset($_E107['no_theme']))
 {
+	$dbg->logTime('Find/Load Theme');
 
 	if (e_ADMIN_AREA && vartrue($pref['admintheme']))
 	{
-		//We have now e_IFRAME mod and USER_AREA force
-		// && (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE)
-
-/*	  if (strpos(e_SELF, "newspost.php") !== FALSE)
-	  {
-		define("MAINTHEME", e_THEME.$pref['sitetheme']."/");		MAINTHEME no longer used in core distribution
-	  }  */
-		checkvalidtheme($pref['admintheme']);
+		e_theme::initTheme($pref['admintheme']);
 	}
-	elseif (USERTHEME !== false/* && USERTHEME != 'USERTHEME'*/ && !e_ADMIN_AREA)
+	elseif (deftrue('USERTHEME') && e_ADMIN_AREA === false)
 	{
-		checkvalidtheme(USERTHEME);
+		e_theme::initTheme(USERTHEME);
 	}
 	else
 	{
-		checkvalidtheme($pref['sitetheme']);
+		e_theme::initTheme($pref['sitetheme']);
 	}
-
 
 }
 
 $theme_pref = varset($pref['sitetheme_pref']);
 // --------------------------------------------------------------
-$dbg->logTime('Find/Load Theme-Layout'); // needs to run after checkvalidtheme() (for theme previewing).
 
-if(deftrue('e_ADMIN_AREA'))
-{
-	define('THEME_STYLE', $pref['admincss']);
-}
-elseif(varset($pref['themecss']) && file_exists(THEME.$pref['themecss']))
-{
-	define('THEME_STYLE', $pref['themecss']);
-}
-else
-{
-	define('THEME_STYLE', 'style.css');
-}
-
-if(!defined('THEME_LAYOUT'))
-{
-	$user_pref      = e107::getUser()->getPref();
-	$pref           = e107::getPref();
-	$cusPagePref    = (!empty($user_pref['sitetheme_custompages'])) ? $user_pref['sitetheme_custompages'] : varset($pref['sitetheme_custompages'],array());
-	$cusPageDef     = (empty($user_pref['sitetheme_deflayout'])) ? varset($pref['sitetheme_deflayout']) : $user_pref['sitetheme_deflayout'];
-	$deflayout      = e107::getTheme()->getThemeLayout($cusPagePref, $cusPageDef, e_REQUEST_URL, varset($_SERVER['SCRIPT_FILENAME']));
-
-	define('THEME_LAYOUT',$deflayout);
-
-    unset($cusPageDef,$lyout,$cusPagePref,$menus_equery,$deflayout);
-}
 
 // Load library dependencies.
-$dbg->logTime('Load Libraries');
-//$startTime = microtime(true);
-if(deftrue('e_ADMIN_AREA'))
+
+if(!isset($_E107['no_theme']))
 {
-	e107::getTheme('current', true)->loadLibrary();
-}
-else
-{
-	e107::getTheme('current')->loadLibrary();
+	$dbg->logTime('Load Libraries');
+	if(deftrue('e_ADMIN_AREA'))
+	{
+		$clearThemeCache = (deftrue('e_ADMIN_HOME', false) || deftrue('e_ADMIN_UPDATE', false));
+		e107::getTheme('current', $clearThemeCache)->loadLibrary();
+		unset($clearThemeCache);
+	}
+	else
+	{
+		e107::getTheme('current')->loadLibrary();
+	}
 }
 //echo "\nRun Time:  " . number_format(( microtime(true) - $startTime), 4) . " Seconds\n";
 // -----------------------------------------------------------------------
@@ -1550,75 +1040,72 @@ if(!isset($_E107['no_menus']))
 }
 
 // here we USE the theme
-$dbg->logTime("Load admin_/theme.php file");
-if(e_ADMIN_AREA)
+if(!isset($_E107['no_theme']))
 {
-	$dbg->logTime('Loading Admin Theme');
-	if(file_exists(THEME.'admin_theme.php') && !deftrue('e_MENUMANAGER_ACTIVE')) // no admin theme when previewing.
+	$dbg->logTime("Load admin_/theme.php file");
+	if(e_ADMIN_AREA)
 	{
-		require_once (THEME.'admin_theme.php');
+		$dbg->logTime('Loading Admin Theme');
+		if(file_exists(THEME.'admin_theme.php') && !deftrue('e_MENUMANAGER_ACTIVE')) // no admin theme when previewing.
+		{
+			require_once (THEME.'admin_theme.php');
+		}
+		else
+		{
+			require_once (THEME.'theme.php');
+		}
 	}
 	else
 	{
+		$dbg->logTime('Loading Site Theme');
 		require_once (THEME.'theme.php');
+
+		if(isset($SC_WRAPPER))
+		{
+			e107::scStyle($SC_WRAPPER);
+		}
 	}
-}
-else
-{
-	$dbg->logTime('Loading Site Theme');
-	require_once (THEME.'theme.php');
-	
-	if(isset($SC_WRAPPER))
+	$dbg->logTime("Init Theme Class");
+	e107::getRender()->_init(); // initialize theme class.
+
+	if ($pref['anon_post'])
 	{
-		e107::scStyle($SC_WRAPPER);
+		define('ANON', true);
+	}
+	else
+	{
+		define('ANON', false);
+	}
+
+	if(empty($pref['newsposts']))
+	{
+		define('ITEMVIEW', 15);
+	}
+	else
+	{
+		define('ITEMVIEW', $pref['newsposts']);
+	}
+
+	$layout = isset($layout) ? $layout : '_default';
+	define('HEADERF', e_CORE."templates/header{$layout}.php");
+	define('FOOTERF', e_CORE."templates/footer{$layout}.php");
+
+	if (!file_exists(HEADERF))
+	{
+		message_handler('CRITICAL_ERROR', 'Unable to find file: '.HEADERF, __LINE__ - 2, __FILE__);
+	}
+
+	if (!file_exists(FOOTERF))
+	{
+		message_handler('CRITICAL_ERROR', 'Unable to find file: '.FOOTERF, __LINE__ - 2, __FILE__);
 	}
 }
-$dbg->logTime("Init Theme Class");
-e107::getRender()->init(); // initialize theme class.
 
-//----------------------------
-//	Load shortcode handler
-//----------------------------
-// ********* This is probably a bodge! Work out what to do properly. Has to be done when $pref valid
-//FIXED - undefined $register_sc
-//$tp->sch_load(); - will be auto-initialized by first $tp->e_sc call - see e_parse->__get()
 
-/*
-$exclude_lan = array('lan_signup.php');  // required for multi-language.
-
-if ($inAdminDir)
-{
-	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_'.e_PAGE);
-	e107_include_once(e_LANGUAGEDIR.'English/admin/lan_'.e_PAGE);
-}
-elseif (!in_array('lan_'.e_PAGE,$exclude_lan) && !$isPluginDir)
-{
-	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE.'/lan_'.e_PAGE);
-	e107_include_once(e_LANGUAGEDIR.'English/lan_'.e_PAGE);
-}
-*/
-
-if ($pref['anon_post'])
-{
-	define('ANON', true);
-}
-else
-{
-	define('ANON', false);
-}
-
-if(empty($pref['newsposts']))
-{
-	define('ITEMVIEW', 15);
-}
-else
-{
-	define('ITEMVIEW', $pref['newsposts']);
-}
 
 if (!empty($pref['antiflood1']) && !defined('FLOODPROTECT'))
 {
-	define('FLOODPROTECT', TRUE);
+	define('FLOODPROTECT', true);
 	define('FLOODTIMEOUT', max(varset($pref['antiflood_timeout'], 10), 3));
 }
 else
@@ -1626,22 +1113,10 @@ else
 	/**
 	 * @ignore
 	 */
-	define('FLOODPROTECT', FALSE);
+	define('FLOODPROTECT', false);
 }
 
-$layout = isset($layout) ? $layout : '_default';
-define('HEADERF', e_CORE."templates/header{$layout}.php");
-define('FOOTERF', e_CORE."templates/footer{$layout}.php");
 
-if (!file_exists(HEADERF))
-{
-	message_handler('CRITICAL_ERROR', 'Unable to find file: '.HEADERF, __LINE__ - 2, __FILE__);
-}
-
-if (!file_exists(FOOTERF))
-{
-	message_handler('CRITICAL_ERROR', 'Unable to find file: '.FOOTERF, __LINE__ - 2, __FILE__);
-}
 
 //define('LOGINMESSAGE', ''); - not needed, breaks login messages
 define('OPEN_BASEDIR', (ini_get('open_basedir') ? true : false));
@@ -1660,20 +1135,18 @@ else
 	/**
 	 * @ignore
 	 */
-	define('e_REFERER_SELF', FALSE);
+	define('e_REFERER_SELF', false);
 }
 
-//BC, DEPRECATED - use e107::getDateConvert(), catched by __autoload as well
-/*if (!class_exists('convert'))
-{
-	require_once(e_HANDLER.'date_handler.php');
-}*/
 
-//@require_once(e_HANDLER."IPB_int.php");
-//@require_once(e_HANDLER."debug_handler.php");
-//-------------------------------------------------------------------------------------------------------------------------------------------
+/**
+ * @deprecated Use e107::getRedirect()->go($url) instead.
+ * @param $qry
+ */
 function js_location($qry)
 {
+	trigger_error('<b>js_location() is deprecated.</b> e107::getRedirect()->go($url) instead.', E_USER_DEPRECATED); // NO LAN
+
 	global $error_handler;
 	if (count($error_handler->errors))
 	{
@@ -1712,8 +1185,8 @@ function check_email($email)
 	/**
 	 * @param mixed $var is a single class number or name, or a comma-separated list of the same.
 	 * @param mixed $userclass a custom list of userclasses or leave blank for the current user's permissions.
-	 * If a class is prefixed with '-' this means 'exclude' - returns FALSE if the user is in this class (overrides 'includes').
-	 * Otherwise returns TRUE if the user is in any of the classes listed in $var.
+	 * If a class is prefixed with '-' this means 'exclude' - returns false if the user is in this class (overrides 'includes').
+	 * Otherwise returns true if the user is in any of the classes listed in $var.
 	 * @param int   $uid
 	 * @return bool
 	 */
@@ -1763,7 +1236,7 @@ function check_class($var, $userclass = USERCLASS_LIST, $uid = 0)
 
 			if ($v[0] === '-')
 			{
-				$invert = TRUE;
+				$invert = true;
 				$v = substr($v, 1);
 			}
 			$v = $e107->user_class->ucGetClassIDFromName($v);
@@ -1773,7 +1246,7 @@ function check_class($var, $userclass = USERCLASS_LIST, $uid = 0)
 			$invert = true;
 			$v = -$v;
 		}
-		if ($v !== FALSE)
+		if ($v !== false)
 		{
 			//	var_dump($v);
 			// Ignore non-valid userclass names
@@ -1783,7 +1256,7 @@ function check_class($var, $userclass = USERCLASS_LIST, $uid = 0)
 				{
 					return false;
 				}
-				$latchedAccess = TRUE;
+				$latchedAccess = true;
 			}
 			elseif ($invert && count($varList) == 1)
 			{
@@ -1802,7 +1275,7 @@ function check_class($var, $userclass = USERCLASS_LIST, $uid = 0)
  * @param bool|mixed|string $ap
  * @return bool
  */
-function getperms($arg, $ap = ADMINPERMS)
+function getperms($arg, $ap = ADMINPERMS, $path = e_SELF)
 {
 	// $ap = "4"; // Just for testing.
 
@@ -1821,11 +1294,12 @@ function getperms($arg, $ap = ADMINPERMS)
 		return true;
 	}
 
-	if ($arg === 'P' && preg_match('#(.*?)/' .e107::getInstance()->getFolder('plugins'). '(.*?)/(.*?)#', e_SELF, $matches))
+	if ($arg === 'P' && preg_match('#(.*?)/' .e107::getInstance()->getFolder('plugins'). '(.*?)/(.*?)#', $path, $matches))
 	{
 		$sql = e107::getDb('psql');
+	/*	$id = e107::getPlug()->load($matches[2])->getId();
+		$arg = 'P'.$id;*/
 
-		// FIXME - cache it, avoid sql query here
 		if ($sql->select('plugin', 'plugin_id', "plugin_path = '".$matches[2]."' LIMIT 1 "))
 		{
 			$row = $sql->fetch();
@@ -1835,7 +1309,7 @@ function getperms($arg, $ap = ADMINPERMS)
 
 	$ap_array = explode('.',$ap);
 
-	if (in_array($arg,$ap_array,FALSE))
+	if (in_array($arg,$ap_array,false))
 	{
 		return true;
 	}
@@ -1867,9 +1341,11 @@ function getperms($arg, $ap = ADMINPERMS)
  */
 function get_user_data($uid, $extra = '')
 {
+	trigger_error('<b>get_user_data() is deprecated.</b> Use e107::user($uid) instead.', E_USER_DEPRECATED); // NO LAN
+
 	if(e107::getPref('developer'))
 	{
-		e107::getAdminLog()->log_event(
+		e107::getLog()->add(
 			'Deprecated call - get_user_data()',
 			'Call to deprecated function get_user_data() (class2.php) '."\n".print_r(debug_backtrace(null,2), true),
 			E_LOG_INFORMATIVE,
@@ -1893,7 +1369,7 @@ function get_user_data($uid, $extra = '')
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 //SO MUCH DEPRECATED 
 /**
- * @deprecated
+ * @deprecated Use instead: e107::getConfig(alias)->->setPref($array)->save();
  * @example Use instead: e107::getConfig(alias)->->setPref($array)->save();  Not to be used for saving plugin or theme prefs!
  * @param string    $table
  * @param int|mixed $uid
@@ -1902,6 +1378,8 @@ function get_user_data($uid, $extra = '')
  */
 function save_prefs($table = 'core', $uid = USERID, $row_val = '')
 {
+	trigger_error('<b>save_prefs() is deprecated.</b> Use e107::getConfig(table)->->setPref($array)->save() instead.', E_USER_DEPRECATED); // NO LAN
+
 	global $pref, $user_pref, $tp, $PrefCache, $sql, $eArrayStorage, $theme_pref;
 	unset($row_val);
 
@@ -1909,7 +1387,7 @@ function save_prefs($table = 'core', $uid = USERID, $row_val = '')
 	{
 		$backtrace = debug_backtrace(false);
 		
-		e107::getAdminLog()->add(
+		e107::getLog()->add(
 			'Deprecated call - save_prefs()',
 			"Call to deprecated function save_prefs() (class2.php). Backtrace:\n".print_r($backtrace, true),
 			E_LOG_INFORMATIVE,
@@ -1931,7 +1409,7 @@ function save_prefs($table = 'core', $uid = USERID, $row_val = '')
 			{
 				$backtrace = debug_backtrace(false);
 
-				e107::getAdminLog()->add(
+				e107::getLog()->add(
 				'Core pref corruption avoided',
 				"Call to deprecated function save_prefs() (class2.php) with too few prefs. Backtrace:\n".print_r($backtrace, true),
 				E_LOG_INFORMATIVE,
@@ -1954,7 +1432,7 @@ function save_prefs($table = 'core', $uid = USERID, $row_val = '')
 
 		default:
 			$_user_pref = $tp->toDB($user_pref, true, true, 'pReFs');
-			$tmp = $eArrayStorage->WriteArray($_user_pref);
+			$tmp = e107::serialize($_user_pref);
 			$sql->update('user', "user_prefs='$tmp' WHERE user_id=". (int)$uid);
 			return $tmp;
 			break;
@@ -1973,6 +1451,8 @@ function save_prefs($table = 'core', $uid = USERID, $row_val = '')
  */
 function cachevars($id, $var)
 {
+	trigger_error('<b>cachevars() is deprecated.</b> Use e107::setRegistry() instead.', E_USER_DEPRECATED); // NO LAN
+
 	e107::setRegistry('core/cachedvars/'.$id, $var);
 }
 
@@ -1984,6 +1464,8 @@ function cachevars($id, $var)
  */
 function getcachedvars($id)
 {
+	trigger_error('<b>getcachedvars() is deprecated.</b> Use e107::getRegistry() instead.', E_USER_DEPRECATED); // NO LAN
+
 	return e107::getRegistry('core/cachedvars/'.$id, false);
 }
 
@@ -2013,7 +1495,7 @@ class floodprotect
 			return ($row[$orderfield] <= (time() - FLOODTIMEOUT));
 		}
 
-		return TRUE;
+		return true;
 	}
 }
 
@@ -2033,23 +1515,26 @@ function init_session()
 	# - scope public
 	*/
 
-	
 	// ----------------------------------------
 
 	// Set 'UTC' as default timezone to avoid PHP warnings.
 	date_default_timezone_set('UTC');
 
-	global $user_pref, $currentUser;
+	global $user_pref, $currentUser, $_E107;
 
+	e107::getDebug()->logTime('[init_session: getInstance]');
 	$e107 = e107::getInstance();
 
 	// New user model
+	e107::getDebug()->logTime('[init_session: getUser]');
 	$user = e107::getUser();
 
 	// Get user timezone.
+	e107::getDebug()->logTime('[init_session: getTimezone]');
 	$tzUser = $user->getTimezone();
 
 	// If user timezone is valid.
+	e107::getDebug()->logTime('[init_session: systemTimeZoneIsValid]');
 	if (varset($tzUser, false) && systemTimeZoneIsValid($tzUser))
 	{
 		// Sets the default timezone used by all date/time functions.
@@ -2073,10 +1558,12 @@ function init_session()
 		unset($tz);
 	}
 
-e107::getDebug()->log("Timezone: ".USERTIMEZONE); // remove later on.
+	e107::getDebug()->log("Timezone: ".USERTIMEZONE); // remove later on.
 
-
+	e107::getDebug()->logTime('[init_session: getIP]');
 	define('USERIP', e107::getIPHandler()->getIP());
+
+	e107::getDebug()->logTime('[init_session: getToken]');
 	define('POST_REFERER', md5($user->getToken()));
 
 	// Check for intruders - outside the model for now
@@ -2093,6 +1580,7 @@ e107::getDebug()->log("Timezone: ".USERTIMEZONE); // remove later on.
 		define('USER', true);
 		define('USERID', 1);
 		define('USERNAME', 'e107-cli');
+		define('ADMINNAME', 'e107-cli');
 		define('USERTHEME', false);
 		define('ADMIN', true);
 		define('ADMINPERMS', '0');
@@ -2101,9 +1589,12 @@ e107::getDebug()->log("Timezone: ".USERTIMEZONE); // remove later on.
 		define('USEREMAIL', '');
 		define('USERCLASS_LIST', '253,254,250,251,0'); // needed to run some queries.
 		define('USERJOINED', '');
+		define('e_CLASS_REGEXP', '(^|,)(253|254|250|251|0)(,|$)');
+		define('e_NOBODY_REGEXP', '(^|,)255(,|$)');
 		return;
 	}
 
+	e107::getDebug()->logTime('[init_session: hasBan]');
 	if ($user->hasBan())
 	{
 		$msg = e107::findPref('ban_messages/6');
@@ -2111,6 +1602,7 @@ e107::getDebug()->log("Timezone: ".USERTIMEZONE); // remove later on.
 		exit;
 	}
 
+	e107::getDebug()->logTime('[init_session: Constants]');
 	define('ADMIN', $user->isAdmin());
 	define('ADMINID', $user->getAdminId());
 	define('ADMINNAME', $user->getAdminName());
@@ -2118,6 +1610,7 @@ e107::getDebug()->log("Timezone: ".USERTIMEZONE); // remove later on.
 	define('ADMINEMAIL', $user->getAdminEmail());
 	define('ADMINPWCHANGE', $user->getAdminPwchange());
 
+	e107::getDebug()->logTime('[init_session: isUser]');
 	if (!$user->isUser())
 	{
 		define('USER', false);
@@ -2150,10 +1643,12 @@ e107::getDebug()->log("Timezone: ".USERTIMEZONE); // remove later on.
 		define('USERVISITS', $user->get('user_visits'));
 		define('USERSIGNATURE', $user->get('user_signature'));
 
-		if(ADMIN) // XXX - why for admins only?
+
+		if(ADMIN && empty($_E107['no_online']) && empty($_E107['no_forceuserupdate'])) // XXX - why for admins only?
 		{
 			e107::getRedirect()->setPreviousUrl();
 		}
+
 		define('USERLV', $user->get('user_lastvisit'));
 
 		// BC - FIXME - get rid of them!
@@ -2211,6 +1706,7 @@ e107::getDebug()->log("Timezone: ".USERTIMEZONE); // remove later on.
 		$user_pref = $user->getPref();
 	}
 
+	e107::getDebug()->logTime('[init_session: getClassList]');
 	define('USERCLASS_LIST', $user->getClassList(true));
 	define('e_CLASS_REGEXP', $user->getClassRegex());
 	define('e_NOBODY_REGEXP', '(^|,)'.e_UC_NOBODY.'(,|$)');
@@ -2226,6 +1722,20 @@ if(!isset($_E107['no_online']))
 }
 
 $dbg->logTime('(After Go online)');
+$dbg->logTime('Frontpage detection');
+
+$fpUrl = str_replace(SITEURL, '', rtrim(e_REQUEST_URL, '?/'));
+$fpPref = e107::getFrontpage();
+
+if($fpUrl === $fpPref)
+{
+	e107::canonical('_SITEURL_');
+}
+unset($fpUrl, $fpPref);
+
+
+
+
 
 /**
  * Set Cookie
@@ -2240,17 +1750,49 @@ $dbg->logTime('(After Go online)');
  */
 function cookie($name, $value, $expire=0, $path = e_HTTP, $domain = '', $secure = 0)
 {
-	if(!e_SUBDOMAIN || (defined('MULTILANG_SUBDOMAIN') && MULTILANG_SUBDOMAIN === TRUE))
+	global $_E107;
+
+	if(!empty($_E107['cli']))
+	{
+		return null;
+	}
+/*
+	if(!e_SUBDOMAIN || (defined('MULTILANG_SUBDOMAIN') && MULTILANG_SUBDOMAIN === true))
 	{
 		$domain = (e_DOMAIN !== false) ? ".".e_DOMAIN : "";
-	}	
+	}
+	*/
+	if((empty($domain) && !e_SUBDOMAIN) || (defined('MULTILANG_SUBDOMAIN') && MULTILANG_SUBDOMAIN === true))
+	{
+		$domain = (e_DOMAIN !== false) ? ".".e_DOMAIN : '';
+	}
+
+	if(defined('e_MULTISITE_MATCH') && deftrue('e_ADMIN_AREA'))
+	{
+		$path = '/';
+	}
 	
 	setcookie($name, $value, $expire, $path, $domain, $secure, true);
 }
 
-// generic function for retaining values across pages. ie. cookies or sessions.
+//
+/**
+ *
+ * generic function for retaining values across pages. ie. cookies or sessions.
+ * @deprecated Use e107::getUserSession()->makeUserCookie($userData, $autologin); instead.
+ * @param $name
+ * @param $value
+ * @param string $expire
+ * @param string $path
+ * @param string $domain
+ * @param int $secure
+ */
 function session_set($name, $value, $expire='', $path = e_HTTP, $domain = '', $secure = 0)
 {
+
+	//$userData = ['user_name
+//	e107::getUserSession()->makeUserCookie($userData, $autologin);
+
 	global $pref;
 	if ($pref['user_tracking'] === 'session')
 	{
@@ -2258,9 +1800,9 @@ function session_set($name, $value, $expire='', $path = e_HTTP, $domain = '', $s
 	}
 	else
 	{
-		if((empty($domain) && !e_SUBDOMAIN) || (defined('MULTILANG_SUBDOMAIN') && MULTILANG_SUBDOMAIN === TRUE))
+		if((empty($domain) && !e_SUBDOMAIN) || (defined('MULTILANG_SUBDOMAIN') && MULTILANG_SUBDOMAIN === true))
 		{
-			$domain = (e_DOMAIN !== FALSE) ? ".".e_DOMAIN : "";
+			$domain = (e_DOMAIN !== false) ? ".".e_DOMAIN : "";
 		}
 
 		if(defined('e_MULTISITE_MATCH'))
@@ -2288,30 +1830,7 @@ function message_handler($mode, $message, $line = 0, $file = '')
 	show_emessage($mode, $message, $line, $file);
 }
 
-/*
-// -----------------------------------------------------------------------------
-function table_exists($check)
-{
-	if (!$GLOBALS['mySQLtablelist'])
-	{
-		$tablist=mysql_list_tables($GLOBALS['mySQLdefaultdb']);
-		while (list($temp) = mysql_fetch_array($tablist))
-		{
-			$GLOBALS['mySQLtablelist'][] = $temp;
-		}
-	}
 
-	$mltable=MPREFIX.strtolower($check);
-
-	foreach ($GLOBALS['mySQLtablelist'] as $lang)
-	{
-		if (strpos($lang, $mltable) !== FALSE)
-		{
-			return TRUE;
-		}
-	}
-}
-*/
 
 function class_list($uid = '')
 {
@@ -2373,70 +1892,30 @@ function class_list($uid = '')
 
 
 /**
- * @Deprecated  by e107::lan();
+ * @deprecated  by e107::lan();
  * @param string $path
  * @param boolean $force [optional] Please use the default
  * @return bool
  */
 function include_lan($path, $force = false)
 {
+	trigger_error('<b>include_lan() is deprecated.</b> Use e107::lan() instead.', E_USER_DEPRECATED); // NO LAN
+
 	return e107::includeLan($path, $force);
 }
-
-/*
-withdrawn - use loadLanFiles($path, 'admin') instead
-// Searches a defined set of paths and file names to load language files used for admin (including install etc)
-function include_lan_admin($path)
-{
-	include_lan($path.'languages/'.e_LANGUAGE.'/lan_config.php');
-	include_lan($path.'languages/admin/'.e_LANGUAGE.'.php');
-}
-*/
-
-
-// Routine looks in standard paths for language files associated with a plugin or theme - primarily for core routines, which won't know
-// for sure where the author has put them.
-// $unitName is the name (directory path) of the plugin or theme
-// $type determines what is to be loaded:
-//		'runtime'	- the standard runtime language file for a plugin
-//		'admin'		- the standard admin language file for a plugin
-//		'theme'		- the standard language file for a plugin (these are usually pretty small, so one is enough)
-// Otherwise, $type is treated as part of a filename within the plugin's language directory, prefixed with the current language
-// Returns FALSE on failure (not found).
-// Returns the include_once error return if there is one
-// Otherwise returns an empty string.
-
-// Note - if the code knows precisely where the language file is located, use include_lan()
-
-// $pref['noLanguageSubs'] can be set TRUE to prevent searching for the English files if the files for the current site language don't exist.
-//DEPRECATED - use e107::loadLanFiles();
-/**
- * @deprecated - use e107::loadLanFiles();
- * @param $unitName
- * @param string $type
- * @return bool|string
- */
-function loadLanFiles($unitName, $type='runtime')
-{
-	$info = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,2); 
-	e107::getMessage()->addDebug("Using deprecated function loanLanFiles(). Replace with e107::loadLanFiles().".print_a($info,true)); 
-	return e107::loadLanFiles($unitName, $type);
-}
-
-
 
 
 
 /**
  *	Check that all required user fields (including extended fields) are valid.
  *	@param array $currentUser - data for user
- *	@return boolean TRUE if update required
+ *	@return boolean true if update required
  */
 function force_userupdate($currentUser)
 {
-	if (e_PAGE == 'usersettings.php' || (defined('FORCE_USERUPDATE') && (FORCE_USERUPDATE == FALSE)) || strpos(e_SELF, ADMINDIR) == TRUE )
+	if (e_PAGE == 'usersettings.php' || (defined('FORCE_USERUPDATE') && (FORCE_USERUPDATE == false)) || strpos(e_SELF, ADMINDIR) == true )
 	{
-		return FALSE;
+		return false;
 	}
 
     $signup_option_names = array('realname', 'signature', 'image', 'timezone', 'class');
@@ -2449,7 +1928,7 @@ function force_userupdate($currentUser)
 		}
     }
 
-	if (!e107::getPref('disable_emailcheck',TRUE) && !trim($currentUser['user_email'])) return TRUE;
+	if (!e107::getPref('disable_emailcheck',true) && !trim($currentUser['user_email'])) return true;
 
 	if(e107::getDb()->select('user_extended_struct', 'user_extended_struct_applicable, user_extended_struct_write, user_extended_struct_name, user_extended_struct_type', 'user_extended_struct_required = 1 AND user_extended_struct_applicable != '.e_UC_NOBODY))
 	{
@@ -2460,17 +1939,17 @@ function force_userupdate($currentUser)
 			$user_extended_struct_name = "user_{$row['user_extended_struct_name']}";
 			if (!isset($currentUser[$user_extended_struct_name]))
 			{
-				//e107::admin_log->e_log_event(4, __FILE__."|".__FUNCTION__."@".__LINE__, 'FORCE', 'Force User update', 'Trigger field: '.$user_extended_struct_name, FALSE, LOG_TO_ROLLING);
-				return TRUE;
+				//e107::admin_log->addEvent(4, __FILE__."|".__FUNCTION__."@".__LINE__, 'FORCE', 'Force User update', 'Trigger field: '.$user_extended_struct_name, false, LOG_TO_ROLLING);
+				return true;
 			}
 			if (($row['user_extended_struct_type'] == 7) && ($currentUser[$user_extended_struct_name] == '0000-00-00'))
 			{
-				//e107::admin_log->e_log_event(4, __FILE__."|".__FUNCTION__."@".__LINE__, 'FORCE', 'Force User update', 'Trigger field: '.$user_extended_struct_name, FALSE, LOG_TO_ROLLING);
-				return TRUE;
+				//e107::admin_log->addEvent(4, __FILE__."|".__FUNCTION__."@".__LINE__, 'FORCE', 'Force User update', 'Trigger field: '.$user_extended_struct_name, false, LOG_TO_ROLLING);
+				return true;
 			}
 		}
 	}
-	return FALSE;
+	return false;
 }
 
 
@@ -2572,17 +2051,21 @@ class error_handler
 	function handle_error($type, $message, $file, $line, $context = null) {
 		$startup_error = (!defined('E107_DEBUG_LEVEL')); // Error before debug system initialized
 
+		switch($type)
+		{
+			case E_USER_DEPRECATED:
+				if($this->deftrue('E107_DBG_DEPRECATED'))
+				{
+					$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,3);
+					e107::getDebug()->logDeprecated($message, varset($trace[2]['file']), varset($trace[2]['line']));
+				}
+			break;
 
-
-		switch($type) {
 			case E_NOTICE:
-			case E_DEPRECATED:
 		//	case E_STRICT:
 
 			if ($startup_error || $this->deftrue('E107_DBG_ALLERRORS')  || $this->deftrue('E107_DBG_ERRBACKTRACE'))
 			{
-
-
 				$this->addError($type, $message,$line,$file);
 			}
 			break;
@@ -2630,15 +2113,15 @@ class error_handler
 		{
 			$text .= "
 			<tr>
-				<td class='forumheader3'>".$key."</td>
-				<td class='forumheader3'>";
+				<td>".$key."</td>
+				<td>";
 			$text .= !empty($val['class']) ? $val['class']."->" : '';
 			$text .= !empty($val['include_filename']) ? "include: ". str_replace($this->docroot,'', $val['include_filename']) : '';
-			$text .= !empty($val['function']) ? $val['function']."(" : "";
+			$text .= !empty($val['function']) ? htmlentities($val['function'])."(" : "";
 			$text .= !empty($val['params']) ? print_r($val['params'],true) : '';
 			$text .= !empty($val['function']) ? ")" : "";
 			$text .="</td>
-				<td class='forumheader3'>";
+				<td style='width:20%'>";
 			$text .= str_replace($this->docroot,'', $val['file']).":".$val['line'];
 			$text .= "</td>
 			</tr>";
@@ -2664,7 +2147,7 @@ class error_handler
 
 			foreach ($this->errors as $key => $value)
 			{
-				$ret .= "\t<tr>\n\t\t<td class='forumheader3' >{$value['short']}</td><td><input class='btn btn-info button e-expandit' data-target = 'bt_{$key}' type ='button' style='cursor: hand; cursor: pointer;' size='30' value='Back Trace'  />\n";
+				$ret .= "\t<tr>\n\t\t<td>{$value['short']}</td><td><input class='btn btn-info button e-expandit' data-target = 'bt_{$key}' type ='button' style='cursor: hand; cursor: pointer;' size='30' value='Back Trace'  />\n";
 					$ret .= "</td>\n\t</tr>";
 				$ret .= "\t<tr>\n<td style='display: none;' colspan='2' id='bt_{$key}'>".$this->render_trace($value['trace'])."</td></tr>\n";
 
@@ -2676,11 +2159,11 @@ class error_handler
 		{
 			foreach ($this->errors as $key => $value)
 			{
-				$ret .= "<tr><td class='forumheader3'>{$value['short']}</td></tr>\n";
+				$ret .= "<tr><td>{$value['short']}</td></tr>\n";
 			}
 		}
 
-		return ($ret) ? "<table class='table table-condensed fborder'>\n".$ret."</table>" : FALSE;
+		return ($ret) ? "<table class='table table-condensed'>\n".$ret."</table>" : false;
 	}
 
 	/**
@@ -2739,8 +2222,8 @@ class e_http_header
 	
 	function setContent($content,$search=null,$replace=null)
 	{
-
-		if($content == 'buffer')
+		global $_E107;
+		if($content == 'buffer' && empty($_E107['cli']))
 		{
 			$this->length = ob_get_length();
 			$this->content =  ob_get_clean();
@@ -2778,6 +2261,11 @@ class e_http_header
 	
 	function setHeader($header, $force=false, $response_code=null)
 	{
+		if(e107::isCli())
+		{
+			return null;
+		}
+
 		list($key,$val) = explode(':',$header,2);
 		$this->headers[$key] = $val;
 		header($header, $force, $response_code);
@@ -2833,51 +2321,12 @@ class e_http_header
 	
 	function send()
 	{
-		// Disable caching of html. 	
-		/*
-		$this->setHeader("Expires: 0", true);
-		$this->setHeader("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT", true);
-		$this->setHeader("Cache-Control: no-store, no-cache, must-revalidate", true);
-		$this->setHeader("Cache-Control: post-check=0, pre-check=0", false);
-		$this->setHeader("Pragma: no-cache");
-		$this->setHeader("Cache-Control: max-age=0", false);
-		*/
-	//	$this->setHeader("Cache-Control: public", true);
 
-/*
-		if(defined('e_HTTP_STATIC'))
-		{
-			unset($_COOKIE);
-
-			$siteurl = str_replace('https','http',SITEURL);
-			$static = str_replace('https','http', e_HTTP_STATIC);
-
-			if($siteurl === $static && deftrue('e_SUBDOMAIN'))
-			{
-				$accessControl = str_replace(e_SUBDOMAIN.'.', '', SITEURLBASE);
-
-				$this->unsetHeader("Cache-Control");
-			//	$this->unsetHeader("Content-Type");
-				$this->unsetHeader("Set-Cookie");
-				$this->unsetHeader("Pragma");
-				$this->unsetHeader("Expires");
-
-				$this->setHeader("Access-Control-Allow-Origin: ".$accessControl, true);
-				$this->setHeader("Cache-Control: public", true);
-			}
-			else
-			{
-				$this->setHeader("Access-Control-Allow-Origin: ".$static, true);
-			}
-		}
-*/
-
-	
 		$canCache = e107::canCache();
 		
 	// $this->setHeader("Cache-Control: must-revalidate", true); 
 		 
-		if($_SERVER['REQUEST_METHOD'] === 'GET' && $_SERVER['QUERY_STRING'] != 'logout' && $canCache && !deftrue('e_NOCACHE'))
+		if(isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'GET' && $_SERVER['QUERY_STRING'] != 'logout' && $canCache && !deftrue('e_NOCACHE'))
 		{
 			// header("Cache-Control: must-revalidate", true);	
 			if(e107::getPref('site_page_expires')) // TODO - allow per page
@@ -2947,38 +2396,6 @@ class e_http_header
 		
 	
 	
-}	
-
-
-
-
-
-
-
-
-function e107_ini_set($var, $value)
-{
-	if (function_exists('ini_set'))
-	{
-		return ini_set($var, $value);
-	}
-	return FALSE;
-}
-
-// Return true if specified plugin installed, false if not
-//DEPRECATED
-
-/**
- * @deprecated - use e107::isInstalled();
- * @param $plugname
- * @return bool
- */
-function plugInstalled($plugname)
-{
-	return e107::isInstalled($plugname);
-	/*global $pref;
-	// Could add more checks here later if appropriate
-	return isset($pref['plug_installed'][$plugname]);*/
 }
 
 $dbg->logTime('(After class2)');

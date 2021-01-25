@@ -233,7 +233,7 @@ class theme_shortcodes extends e_shortcode
 			
 			
 			
-			return $tp->parseTemplate($text, true, $login_menu_shortcodes);
+			return e107::getParser()->parseTemplate($text, true, $login_menu_shortcodes);
 		}  
 
 		
@@ -276,7 +276,7 @@ class theme_shortcodes extends e_shortcode
 		';
 
 
-		return $tp->parseTemplate($text,true,$login_menu_shortcodes);
+		return e107::getParser()->parseTemplate($text,true,$login_menu_shortcodes);
 	}	
 	
 
@@ -327,21 +327,20 @@ class theme_shortcodes extends e_shortcode
 	function sc_bootstrap_megamenu_example($data)
 	{
 		// include a plugin, custom code, whatever you wish.
-
 		// return print_a($data,true);
 
 		$parm= array();
 		$parm['caption']        = '';
-		$parm['titleLimit']     = 25; //    number of chars fo news title
-		$parm['summaryLimit']   = 50; //   number of chars for new summary
-		$parm['source']         = 'latest'; //      latest (latest news items) | sticky (news items) | template (assigned to news-grid layout)
-		$parm['order']          = 'DESC'; //       n.news_datestamp DESC
-		$parm['limit']          = '6'; //     10
+		$parm['titleLimit']     = 25;           //    number of chars fo news title
+		$parm['summaryLimit']   = 50;           //   number of chars for new summary
+		$parm['source']         = 'latest';     //      latest (latest news items) | sticky (news items) | template (assigned to news-grid layout)
+		$parm['order']          = 'n.news_datestamp DESC'; //       n.news_datestamp DESC
+		$parm['limit']          = 4;                //     number of items
 		$parm['layout']         = 'media-list'; //    default | or any key as defined in news_grid_template.php
 		$parm['featured']       = 0;
 
         unset($data);
-		return "<div class='container'>". e107::getObject('news')->render_newsgrid($parm) ."</div>";
+		return '<div class="container mega-menu-example">'. e107::getObject('news')->render_newsgrid($parm) ."</div>";
 
 
 	}

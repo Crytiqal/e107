@@ -11,7 +11,7 @@
 */
 
 
-require_once('../../class2.php');
+require_once(__DIR__.'/../../class2.php');
 if (!getperms('P')) 
 {
 	e107::redirect('admin');
@@ -123,6 +123,8 @@ class newsletter
 		$mes = e107::getMessage();
 		$tp = e107::getParser();
 
+		$text = '';
+
 		if(!$sql->select('newsletter', '*', "newsletter_parent='0'  ORDER BY newsletter_id DESC"))
 		{
 			$mes->addInfo(NLLAN_05);
@@ -168,7 +170,8 @@ class newsletter
 		}
 		$ns->tablerender(NLLAN_10, $mes->render() . $text);
 
-		unset($text);
+
+		$text = '';
 
 		if(!$sql->select('newsletter', '*', "newsletter_parent!='0' ORDER BY newsletter_id DESC"))
 		{
@@ -467,10 +470,10 @@ class newsletter
 		{
 			$mailMainID = $mailData['mail_source_id'] = $result;
 		}
-		else
-		{
+		//else
+		//{
 				// TODO: Handle error
-		}
+		//}
   
 
 		$mailer->mailInitCounters($mailMainID);			// Initialise counters for emails added
@@ -610,7 +613,7 @@ class newsletter
 		$vs_text = '';
 
 
-		if(!$nl_sql->db_Select('newsletter', '*', 'newsletter_id='.$p_id))// Check if newsletter id is available
+		if(!$nl_sql->select('newsletter', '*', 'newsletter_id='.$p_id))// Check if newsletter id is available
 		{	
 			$mes->addError(NLLAN_56);
 			$vs_text .= "<div class='buttons-bar center'>
@@ -646,7 +649,7 @@ class newsletter
 			}
 			if ($subscribers_total_count<1) 
 			{
-				header("location:".e_SELF);
+				e107::redirect(e_SELF);
 				exit;
 			}
 			// Loop through each user in the array subscribers_list & sanatize

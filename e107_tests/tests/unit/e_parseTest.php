@@ -28,7 +28,38 @@
             $this->tp->__construct();
 		}
 
+		public function testInit()
+		{
+			$this->tp->init();
+		}
 
+		public function testStripBlockTags()
+		{
+			$tests = array(
+				0 => array(
+					'text'  => '<p>Paragraph 1</p><p><b>Paragraph 2<br >Line 3</b></p>',
+					'expected'  => "Paragraph 1<b>Paragraph 2<br >Line 3</b>",
+				),
+
+
+			);
+
+			foreach($tests as $var)
+			{
+				$result = $this->tp->stripBlockTags($var['text']);
+
+				if(empty($var['expected']))
+				{
+					echo $result."\n\n";
+					continue;
+				}
+
+				$this->assertEquals($var['expected'], $result);
+			}
+
+
+
+		}
 
 /*
 		public function testHtmlAbuseFilter()
@@ -123,12 +154,299 @@ while(&#036;row = &#036;sql-&gt;fetch())
 		{
 
 		}
-
+*/
 		public function testThumbUrlDecode()
 		{
+			$tests = array(
+				0   => array(
+					'input' => '/media/img/a400xa500/myimage.jpg',
+					'expected' => array (
+					  'src' => 'e_MEDIA_IMAGE/myimage.jpg',
+					  'aw' => '400',
+					  'ah' => '500',
+					)
+				),
+				1   => array(
+					'input' => '/media/img/400x500/myimage2.jpg',
+					'expected' => array (
+					  'src' => 'e_MEDIA_IMAGE/myimage2.jpg',
+					  'w' => '400',
+					  'h' => '500',
+					)
+				),
+				2   => array(
+					'input' => '/theme/img/a400xa500/mytheme/myimage.jpg',
+					'expected' => array (
+					  'src' => 'e_THEME/mytheme/myimage.jpg',
+					  'aw' => '400',
+					  'ah' => '500',
+					)
+				),
+				3   => array(
+					'input' => '/theme/img/400x500/mytheme/myimage2.jpg',
+					'expected' => array (
+					  'src' => 'e_THEME/mytheme/myimage2.jpg',
+					  'w' => '400',
+					  'h' => '500',
+					)
+				),
+
+			);
+
+			foreach($tests as $var)
+			{
+				$result = $this->tp->thumbUrlDecode($var['input']);
+				$this->assertSame($var['expected'], $result);
+			}
+
 
 		}
-*/
+
+
+		function testToHTMLModifiers()
+		{
+		//	e107::getConfig()->set('make_clickable', 0)->save(false, true);
+
+			$list = $this->tp->getModifierList();
+
+			$tests = array (
+				'emotes_off'        =>
+					array(
+						'input'    => ":-)",
+						'expected' => ':-)',
+					),
+				'emotes_on'         =>
+					array(
+						'input'    => ":-)",
+						'expected' => '<img class=\'e-emoticon\' src=\'https://localhost/e107/e107_images/emotes/default/smile.png\' alt="smile"  />',
+					),
+				'no_hook'           =>
+					array(
+						'input'    => "",
+						'expected' => '',
+					),
+				'do_hook'           =>
+					array(
+						'input'    => "",
+						'expected' => '',
+					),
+				'scripts_off'       =>
+					array(
+						'input'    => "",
+						'expected' => '',
+					),
+				'scripts_on'        =>
+					array(
+						'input'    => "",
+						'expected' => '',
+					),
+				'no_make_clickable' =>
+					array(
+						'input'    => "www.somewhere.com mailto:myemail@somewhere.com",
+						'expected' => 'www.somewhere.com mailto:myemail@somewhere.com',
+					),
+				'make_clickable'    =>
+					array(
+						'input'    => "www.somewhere.com mailto:myemail@somewhere.com",
+						'expected' => '', // random obfiscation
+					),
+				'no_replace'        =>
+					array(
+						'input'    => "www.somewhere.com",
+						'expected' => '',
+					),
+				'replace'           =>
+					array(
+						'input'    => "www.somewhere.com",
+						'expected' => '',
+					),
+				'consts_off'        =>
+					array(
+						'input'    => "{e_PLUGIN}",
+						'expected' => '{e_PLUGIN}',
+					),
+				'consts_rel'        =>
+					array(
+						'input'    => "{e_PLUGIN}",
+						'expected' => 'e107_plugins/',
+					),
+				'consts_abs'        =>
+					array(
+						'input'    => "{e_PLUGIN}",
+						'expected' => '/e107_plugins/',
+					),
+				'consts_full'       =>
+					array(
+						'input'    => "{e_PLUGIN}",
+						'expected' => 'https://localhost/e107/e107_plugins/',
+					),
+				'scparse_off'       =>
+					array(
+						'input'    => "{SITENAME}",
+						'expected' => '{SITENAME}',
+					),
+				'scparse_on'        =>
+					array(
+						'input'    => "{SITENAME}",
+						'expected' => 'e107',
+					),
+				'no_tags'           =>
+					array(
+						'input'    => "<b>bold</b>",
+						'expected' => 'bold',
+					),
+				'do_tags'           =>
+					array(
+						'input'    => "<b>bold</b>",
+						'expected' => '<b>bold</b>',
+					),
+				'fromadmin'         =>
+					array(
+						'input'    => "My Text {SITENAME} {e_PLUGIN} www.somewhere.com \nNew line :-)",
+						'expected' => '',
+					),
+				'notadmin'          =>
+					array(
+						'input'    => "My Text {SITENAME} {e_PLUGIN} www.somewhere.com \nNew line :-)",
+						'expected' => '',
+					),
+				'er_off'            =>
+					array(
+						'input'    => "My Text {SITENAME} {e_PLUGIN} www.somewhere.com \nNew line :-)",
+						'expected' => '',
+					),
+				'er_on'             =>
+					array(
+						'input'    => "My Text {SITENAME} {e_PLUGIN} www.somewhere.com \nNew line :-)",
+						'expected' => '',
+					),
+				'defs_off'          =>
+					array(
+						'input'    => "LAN_THANK_YOU",
+						'expected' => 'LAN_THANK_YOU',
+					),
+				'defs_on'           =>
+					array(
+						'input'    => "LAN_THANK_YOU",
+						'expected' => 'Thank you',
+					),
+				'dobreak'           =>
+					array(
+						'input'    => "Line 1\nLine 2\nLine 3",
+						'expected' => 'Line 1<br />Line 2<br />Line 3',
+					),
+				'nobreak'           =>
+					array(
+						'input'    => "Line 1\nLine 2\nLine 3",
+						'expected' => "Line 1\nLine 2\nLine 3",
+					),
+				'lb_nl'             =>
+					array(
+						'input'    => "Line 1\nLine 2\nLine 3",
+						'expected' => "Line 1\nLine 2\nLine 3",
+					),
+				'lb_br'             =>
+					array(
+						'input'    => "Line 1\nLine 2\nLine 3",
+						'expected' => 'Line 1<br />Line 2<br />Line 3',
+					),
+				'retain_nl'         =>
+					array(
+						'input'    => "Line 1\nLine 2\nLine 3",
+						'expected' => "Line 1\nLine 2\nLine 3",
+					),
+				'defs'              =>
+					array(
+						'input'    => "LAN_THANK_YOU",
+						'expected' => 'Thank you',
+					),
+				'parse_sc'          =>
+					array(
+						'input'    => "{SITENAME}",
+						'expected' => 'e107',
+					),
+				'constants'         =>
+					array(
+						'input'    => "{e_PLUGIN}",
+						'expected' => 'e107_plugins/',
+					),
+				'value'             =>
+					array(
+						'input'    => "",
+						'expected' => '',
+					),
+				'wysiwyg'           =>
+					array(
+						'input'    => "",
+						'expected' => '',
+					),
+			);
+
+
+
+			$ret = [];
+			foreach($list as $mod => $val)
+			{
+				if(empty($tests[$mod]['expected']))
+				{
+					continue;
+				}
+
+				$result = $this->tp->toHTML($tests[$mod]['input'], false, 'defaults_off,'.$mod);
+				$this->assertSame($tests[$mod]['expected'], $result, $mod." didn't match the expected result.");
+			//	$ret[$mod] = $result;
+
+			}
+
+
+		//	e107::getConfig()->set('make_clickable', 0)->save(false, true);
+		//	var_export($ret);
+
+		}
+
+
+
+		function testToHTMLWithBBcode()
+		{
+			$tests = array(
+				0 => array(
+					'text'  => '[code]$something = "something";[/code]',
+					'expected'  => "<pre class='prettyprint linenums code_highlight code-box bbcode-code' style='unicode-bidi: embed; direction: ltr'>\$something = &quot;something&quot;;</pre>",
+				),
+				1 => array(
+					'text'  => '[b]Title[/b][code]$something = "something"; [b]Not parsed[/b][/code]',
+					'expected'  => "<strong class='bbcode bold bbcode-b'>Title</strong><pre class='prettyprint linenums code_highlight code-box bbcode-code' style='unicode-bidi: embed; direction: ltr'>\$something = &quot;something&quot;; &#091;b]Not parsed&#091;/b]</pre>",
+				),
+				2 => array(
+					'text'  => '[php]<?php $something = "something";[/php]', // legacy usage, now deprecated.
+					'expected'  => "",
+				),
+				3 => array(
+					'text'  => "[table][tr]\n[td]cell[/td]\n[/tr][/table]", 
+					'expected'  => "<table class='table table-striped table-bordered bbcode-table'><tr>\n<td>cell</td>\n</tr></table>",
+				),
+
+
+			);
+
+			foreach($tests as $var)
+			{
+				$result = $this->tp->toHTML($var['text'], true);
+
+				if(!isset($var['expected']))
+				{
+					echo $result."\n\n";
+					continue;
+				}
+
+				$this->assertEquals($var['expected'], $result);
+			}
+
+
+
+		}
+
+
 
 		public function testParseTemplateWithEnabledCoreShortcodes()
 		{
@@ -145,14 +463,22 @@ while(&#036;row = &#036;sql-&gt;fetch())
 
 		public function testParseTemplateWithCoreAddonShortcodes()
 		{
+			$shortcodeObject = e107::getScBatch('online', true);
+
+			$expected = "<a href=''>lost</a>";
+			$result = $this->tp->parseTemplate('{ONLINE_MEMBER_PAGE}', false, $shortcodeObject);
+			$this->assertEquals($expected, $result);
+
 			e107::getPlugin()->uninstall('online');
-			e107::getScParser()->__construct();
+			$sc = e107::getScParser();
+			$sc->__construct();
+		//	$sc->resetscClass('online', null);
 
 			$result = $this->tp->parseTemplate('{ONLINE_MEMBER_PAGE}', false);
 			$this->assertEmpty($result);
 
 			$result = $this->tp->parseTemplate('{ONLINE_MEMBER_PAGE}', true);
-			$this->assertEmpty($result);
+			$this->assertEmpty($result, "{ONLINE_MEMBER_PAGE} wasn't empty: ".$result);
 
 			$shortcodeObject = e107::getScBatch('online', true);
 
@@ -160,11 +486,11 @@ while(&#036;row = &#036;sql-&gt;fetch())
 			$result = $this->tp->parseTemplate('{ONLINE_MEMBER_PAGE}', false, $shortcodeObject);
 			$this->assertEquals($expected, $result);
 
-			$result = $this->tp->parseTemplate('{ONLINE_MEMBER_PAGE}', false);
+			$result = $this->tp->parseTemplate('{ONLINE_MEMBER_PAGE}', true);
 			$this->assertEmpty($result);
 
-			$result = $this->tp->parseTemplate('{ONLINE_MEMBER_PAGE}', true);
-			$this->assertEquals($expected, $result);
+		//	$result = $this->tp->parseTemplate('{ONLINE_MEMBER_PAGE}', true);
+		//	$this->assertEquals($expected, $result);
 		}
 
 		public function testParseTemplateWithNonCoreShortcodes()
@@ -234,7 +560,11 @@ while(&#036;row = &#036;sql-&gt;fetch())
 			$actual = $this->tp->toForm($db);
 			$expected = 'lr.src = window._lr.url + &#039;/Scripts/api.js&#039;;';
 			$this->assertEquals($expected, $actual);
-			
+
+
+			$actual = $this->tp->toForm("[html]Something &quot;hi&quot;[/html]");
+			$this->assertSame('[html]Something "hi"[/html]', $actual);
+
 		}
 /*
 		public function testUstristr()
@@ -263,22 +593,116 @@ while(&#036;row = &#036;sql-&gt;fetch())
 
 
 		}
-/*
+
 		public function testToNumber()
 		{
+			$result = $this->tp->toNumber('v2a');
+			$this->assertEquals('2', $result);
+
+			$result = $this->tp->toNumber('v1.5');
+			$this->assertEquals('1.5', $result);
+
+
+			$result = $this->tp->toNumber('v3.5');
+			$this->assertEquals('3.5', $result);
+		}
+/*
+		public function testthumbUrlSEF()
+		{
+		//	$this->tp->thumbUrlSEF($url);
+
+
+
 
 		}
+*/
+	/*	public function testTextclean()
+		{
+			$string = "\n\n\nSomething\n\n\n";
+			$result = $this->tp->textclean($string);
+			var_export($result);
+			//$this->assertSame();
+		}*/
 
-		public function testTextclean()
+		public function testMultibyteOn()
 		{
 
+			// enable multibyte mode.
+			$this->tp->setMultibyte(true);
+
+			$input = "русские";
+
+			// strtoupper
+			$result = $this->tp->ustrtoupper($input);
+			$this->assertEquals('РУССКИЕ', $result);
+
+			// strlen
+			$result = $this->tp->ustrlen($input);
+			$this->assertEquals(7, $result);
+
+			// strtolower
+			$result = $this->tp->ustrtolower('РУССКИЕ');
+			$this->assertEquals($input, $result);
+
+			// strpos
+			$result = $this->tp->ustrpos($input, 'и');
+			$this->assertEquals(5, $result);
+
+			// substr
+			$result = $this->tp->usubstr($input, 0, 5);
+			$this->assertEquals('русск', $result);
+
+			// stristr
+			$result = $this->tp->ustristr($input, 'ские', true);
+			$this->assertEquals('рус', $result);
+
+			// strrpos (last occurance of a string)
+			$result = $this->tp->ustrrpos($input, 'с');
+			$this->assertEquals(3, $result);
+
+			$this->tp->setMultibyte(false); // disable after test.
+
 		}
 
-		public function testUstrtoupper()
+		public function testMultibyteOff()
 		{
 
-		}
+			// enable multibyte mode.
+			$this->tp->setMultibyte(false);
 
+			$input = "an example of text";
+
+			// strtoupper
+			$result = $this->tp->ustrtoupper($input);
+			$this->assertEquals('AN EXAMPLE OF TEXT', $result);
+
+			// strlen
+			$result = $this->tp->ustrlen($input);
+			$this->assertEquals(18, $result);
+
+			// strtolower
+			$result = $this->tp->ustrtolower('AN EXAMPLE OF TEXT');
+			$this->assertEquals($input, $result);
+
+			// strpos
+			$result = $this->tp->ustrpos($input, 't');
+			$this->assertEquals(14, $result);
+
+			// substr
+			$result = $this->tp->usubstr($input, 0, 5);
+			$this->assertEquals('an ex', $result);
+
+			// stristr
+			$result = $this->tp->ustristr($input, 'of', true);
+			$this->assertEquals('an example ', $result);
+
+			// strrpos (last occurance of a string)
+			$result = $this->tp->ustrrpos($input, 'e');
+			$this->assertEquals(15, $result);
+
+
+		}
+/*
 		public function testUstrlen()
 		{
 
@@ -468,10 +892,6 @@ while(&#036;row = &#036;sql-&gt;fetch())
 
 		}
 /*
-		public function testHtml_truncate_old()
-		{
-
-		}
 
 		public function testToJSONhelper()
 		{
@@ -482,17 +902,82 @@ while(&#036;row = &#036;sql-&gt;fetch())
 		{
 
 		}
-
-		public function testPost_toForm()
+*/
+		public function testPostToForm()
 		{
+			$text = "<div class='something'>My Test</div>";
+			$expected = '&lt;div class=&#039;something&#039;&gt;My Test&lt;/div&gt;';
+			$result = $this->tp->post_toForm($text);
+			$this->assertSame($expected, $result);
+
+			$array = array($text);
+			$arrayExp = array($expected);
+			$result = $this->tp->post_toForm($array);
+			$this->assertSame($arrayExp, $result);
+
 
 		}
 
 		public function testHtml_truncate()
 		{
+			$this->tp->setMultibyte(true);
+
+			$tests  = array(
+				0   => array(
+					'input'     => '<p>Lorem ipsum dolor sit amet.</p>',
+					'expected'  => '<p>Lorem ipsum dolor...</p>',
+				),
+				1   => array(
+					'input'     => '<p>Lorem ipsum <a href="">dolor</a> sit amet.</p>',
+					'expected'  => '<p>Lorem ipsum <a href="">dolor...</a></p>',
+				),
+				2   => array(
+					'input'     => '<p>Lorem ipsum <img src="#" style="width:100px" /> dolor</img> sit amet.</p>',
+					'expected'  => '<p>Lorem ipsum <img src="#" style="width:100px" /> dolo...</p>',
+				),
+				3   => array(
+					'input'     => '<p>Это <a href="#">предложение на русском</a> языке</p>',
+					'expected'  => '<p>Это <a href="#">предложение н...</a></p>',
+				),
+				4   => array(
+					'input'     => '<p>Lorem ipsum &amp; dolor sit amet.</p>',
+					'expected'  => '<p>Lorem ipsum &amp; dol...</p>',
+				),
+				5   => array(
+					'input'     => '<p>Это <a href="#">предложение на русском</a> языке</p>',
+					'expected'  => '<p>Это <a href="#">предложение...</a></p>',
+					'exact'     => false,
+				),
+			/*	6   => array(
+					'input'     => '<script>$();</script><!-- Start div --><div>Lorem</div><!-- End div --> ipsum dolor sit amet',
+					'expected'  => '',
+				),
+				*/
+
+			);
+
+			foreach($tests as $index => $var)
+			{
+				if(empty($var['input']))
+				{
+					continue;
+				}
+
+				$exact = isset($var['exact']) ? $var['exact']: true;
+				$result = $this->tp->html_truncate($var['input'], 17, '...', $exact);
+
+				if(empty($var['expected']))
+				{
+					echo $result."\n\n";
+					continue;
+				}
+
+				$this->assertSame($var['expected'], $result, "Failed on test #".$index);
+			}
+
 
 		}
-
+/*
 		public function testCheckHighlighting()
 		{
 
@@ -505,23 +990,105 @@ while(&#036;row = &#036;sql-&gt;fetch())
 */
 		public function testReplaceConstants()
 		{
-			$actual = $this->tp->replaceConstants('{e_BASE}news','abs');
+			$tests = array(
+				0 => array(
+					'path'  => '{e_BASE}news',
+					'type'  => 'abs',
+					'match' => e_HTTP,
+				),
+				1 => array(
+					'path'  => '{e_BASE}news.php',
+					'type'  => 'full',
+					'match' => 'https://localhost/e107/news.php',
+				),
+				2 => array(
+					'path'  => '{e_PLUGIN}news/index.php',
+					'type'  => null,
+					'match' => 'e107_plugins/news/index.php',
+				),
+			);
 
-			$this->assertStringContainsString(e_HTTP,$actual);
 
+			foreach($tests as $var)
+			{
+				$actual = $this->tp->replaceConstants($var['path'],$var['type']);
+				$this->assertStringContainsString($var['match'], $actual);
+			}
 			
 		}
 /*
 		public function testHtmlwrap()
 		{
+			$html = "<div><p>My paragraph <b>bold</b></p></div>";
 
-		}
+			$result = $this->tp->htmlwrap($html, 20);
+
+			var_dump($result);
+		}*/
 
 		public function testToRss()
 		{
+		/*	if(PHP_VERSION_ID <  71000 )
+			{
+				$this->markTestSkipped("testToRSS() skipped. Requires a healthy libxml installation");
+				return null;
+			}*/
+
+			$tests = array(
+				'[html]<pre class=&quot;prettyprint linenums&quot; style=&quot;unicode-bidi: embed; direction: ltr;&quot;>&lt;/p&gt;&lt;p&gt;&lt;core name=&quot;e_jslib_plugin&quot;&gt;&lt;![CDATA[Array]]&gt;&lt;/core&gt;&lt;/p&gt;&lt;p&gt;&lt;core name=&quot;e_jslib_theme&quot;&gt;&lt;![CDATA[Array]]&gt;&lt;/core&gt;</pre>[/html]',
+				'<div class="something">One & Two < and > " or \'</div>',
+			);
+
+			foreach($tests as $html)
+			{
+
+				$result = $this->tp->toRss($html, true);
+				$valid = $this->isValidXML($result);
+
+				$this->assertTrue($valid);
+			}
+
+
+			// Test with $tags = false;
+			$html = '<div class="something">One & Two < and > " or \'</div>';
+			$result = $this->tp->toRss($html);
+			$this->assertSame("One &amp; Two &lt; and &gt; \" or '", $result);
+			$valid = $this->isValidXML('<tag>'.$result.'</tag>');
+			$this->assertTrue($valid);
+
 
 		}
 
+		private function isValidXML($xmlContent)
+	    {
+	        if (trim($xmlContent) == '')
+	        {
+	            return false;
+	        }
+
+	        $xmlContent = '<?xml version="1.0" encoding="utf-8"?>'."\n".'<description>'.$xmlContent.'</description>';
+
+	        libxml_use_internal_errors(true);
+	        libxml_clear_errors();
+
+	        $doc = new DOMDocument('1.0', 'utf-8');
+	        $doc->loadXML($xmlContent);
+
+	        $errors = libxml_get_errors();
+
+	        if(!empty($errors))
+	        {
+	            var_dump($errors);
+	            codecept_debug($errors);
+	        }
+
+	        libxml_clear_errors();
+
+	        return empty($errors);
+	    }
+
+
+/*
 		public function testPreFilter()
 		{
 
@@ -545,6 +1112,12 @@ while(&#036;row = &#036;sql-&gt;fetch())
 					'options'   =>  array('w'=>300, 'h'=>200, 'type'=>'webp'),
 					'expected'  =>'/thumb.php?src=e_PLUGIN%2Fgallery%2Fimages%2Fbutterfly.jpg&amp;w=300&amp;h=200&amp;type=webp'
 					),
+				3 => array(
+					'path'      => '{e_PLUGIN}gallery/images/butterfly.jpg',
+					'options'   =>  array('w'=>300, 'h'=>200, 'scale'=>'2x'),
+					'expected'  =>'/thumb.php?src=e_PLUGIN%2Fgallery%2Fimages%2Fbutterfly.jpg&amp;w=600&amp;h=400'
+					),
+
 			);
 
 			foreach($urls as $val)
@@ -555,6 +1128,52 @@ while(&#036;row = &#036;sql-&gt;fetch())
 				$this->assertStringContainsString($val['expected'], $actual);
 				//echo $$actual."\n\n";
 			}
+
+
+		}
+
+		public function testThumbUrlSEF()
+		{
+			$urls = array(
+				0 => array(
+					'path'      => '{e_MEDIA_IMAGE}butterfly.jpg',
+					'options'   =>  array('w'=>300, 'h'=>200),
+					'expected'  =>'/media/img/300x200/butterfly.jpg'
+					),
+				1 => array(
+					'path'      => '{e_THEME}dummy/Freesample.svg',
+					'options'   =>  array('w'=>300, 'h'=>200),
+					'expected'  =>'/theme/img/300x200/dummy/Freesample.svg'
+					),
+				2 => array(
+					'path'      => '{e_AVATAR}avatar.jpg',
+					'options'   =>  array('w'=>100, 'h'=>100),
+					'expected'  =>'/media/avatar/100x100/avatar.jpg'
+					),
+
+				/*2 => array(
+					'path'      => '{e_MEDIA_IMAGE}gallery/images/butterfly.jpg',
+					'options'   =>  array('w'=>300, 'h'=>200, 'type'=>'webp'),
+					'expected'  =>'/media/img/300x200/gallery/images/butterfly.webp'
+					),*/
+				3 => array(
+					'path'      => '{e_MEDIA_IMAGE}gallery/images/butterfly.jpg',
+					'options'   =>  array('w'=>300, 'h'=>200, 'scale'=>'2x'),
+					'expected'  =>'/media/img/600x400/gallery/images/butterfly.jpg'
+					),
+
+			);
+
+			foreach($urls as $val)
+			{
+				$actual = $this->tp->thumbUrlSEF($val['path'],$val['options']);
+				$this->assertStringContainsString($val['expected'], $actual);
+				//echo $$actual."\n\n";
+			}
+
+
+
+
 
 
 		}
@@ -614,17 +1233,46 @@ while(&#036;row = &#036;sql-&gt;fetch())
 
 
 		}
-/*
+
 		public function testText_truncate()
 		{
+			$string = "This is a long string that will be truncated." ;
+			$result = $this->tp->text_truncate($string, 20);
+			$this->assertSame('This is a long  ... ', $result);
+
+			$string = "This is has something &amp; something" ;
+			$result = $this->tp->text_truncate($string, 29);
+			$this->assertSame('This is has something &  ... ', $result);
+
+			$string = "Can't fail me now [b]Bold[/b]";
+			$result = $this->tp->text_truncate($string, 25);
+			$this->assertSame("Can't fail me now Bold", $result);
+
+			$string = "Can't fail me now <strong class='bbcode bold bbcode-b'>Bold</strong>";
+			$result = $this->tp->text_truncate($string, 25);
+			$this->assertSame("Can't fail me now Bold", $result);
 
 		}
 
-		public function testMakeClickable()
+		public function testTruncate()
 		{
+			// html
+			$string = "Can't fail me now <strong class='bbcode bold bbcode-b'>Bold</strong>";
+			$result = $this->tp->truncate($string, 25);
+			$this->assertSame("Can't fail me now <strong class='bbcode bold bbcode-b'>Bold</strong>", $result); // html ignored in char count.
+
+			// bbcode - stripped.
+			$string = "Can't fail me now [b]Bold[/b]";
+			$result = $this->tp->truncate($string, 25);
+			$this->assertSame("Can't fail me now Bold", $result);
+
+			// text
+			$string = "This is a long string that will be truncated." ;
+			$result = $this->tp->truncate($string, 20);
+			$this->assertSame('This is a long st...', $result);
 
 		}
-
+/*
 		public function testSetThumbSize()
 		{
 
@@ -634,12 +1282,282 @@ while(&#036;row = &#036;sql-&gt;fetch())
 		{
 
 		}
-
+*/
 		public function testSimpleParse()
 		{
+			$vars = array(
+				'CONTACT_SUBJECT'=> "My Subject",
+				'CONTACT_PERSON' => "My Name"
+			);
+
+			$template = "{CONTACT_SUBJECT} <b>{CONTACT_PERSON}</b>{MISSING_SHORTCODE}";
+
+			$result = $this->tp->simpleParse($template, $vars);
+			$this->assertEquals("My Subject <b>My Name</b>", $result);
+
+			$result = $this->tp->simpleParse($template, null);
+			$this->assertEquals(" <b></b>", $result);
+
+
+			$vars = array(
+				'aaBB_123'   => "Simple Replacement"
+			);
+
+			$template = "-- {aaBB_123} --";
+			$result = $this->tp->simpleParse($template, $vars);
+			$this->assertEquals('-- Simple Replacement --', $result);
 
 		}
-*/
+
+		public function testGetModifierList()
+		{
+			$expected = array (
+				'TITLE'        =>
+					 array (
+					 'context'      => 'TITLE',
+					 'fromadmin'    => false,
+					 'emotes'       => false,
+					 'defs'         => true,
+					 'constants'    => false,
+					 'hook'         => true,
+					 'scripts'      => true,
+					 'link_click'   => false,
+					 'link_replace' => true,
+					 'parse_sc'     => true,
+					 'no_tags'      => false,
+					 'value'        => false,
+					 'nobreak'      => true,
+					 'retain_nl'    => true,
+				 ),
+				 'TITLE_PLAIN'  =>
+				    array (
+					 'context'      => 'TITLE_PLAIN',
+					 'fromadmin'    => false,
+					 'emotes'       => false,
+					 'defs'         => true,
+					 'constants'    => false,
+					 'hook'         => true,
+					 'scripts'      => true,
+					 'link_click'   => false,
+					 'link_replace' => true,
+					 'parse_sc'     => true,
+					 'no_tags'      => true,
+					 'value'        => false,
+					 'nobreak'      => true,
+					 'retain_nl'    => true,
+				 ),
+				 'USER_TITLE'   =>
+				 array (
+				 'context'      => 'USER_TITLE',
+				 'fromadmin'    => false,
+				 'emotes'       => false,
+				 'defs'         => false,
+				 'constants'    => false,
+				 'hook'         => false,
+				 'scripts'      => false,
+				 'link_click'   => false,
+				 'link_replace' => true,
+				 'parse_sc'     => false,
+				 'no_tags'      => false,
+				 'value'        => false,
+				 'nobreak'      => true,
+				 'retain_nl'    => true,
+				 ),
+				 'E_TITLE'      =>
+				 array (
+				 'context'      => 'E_TITLE',
+				 'fromadmin'    => false,
+				 'emotes'       => false,
+				 'defs'         => true,
+				 'constants'    => false,
+				 'hook'         => true,
+				 'scripts'      => false,
+				 'link_click'   => false,
+				 'link_replace' => true,
+				 'parse_sc'     => true,
+				 'no_tags'      => false,
+				 'value'        => false,
+				 'nobreak'      => true,
+				 'retain_nl'    => true,
+				 ),
+				 'SUMMARY'      =>
+				 array (
+				 'context'      => 'SUMMARY',
+				 'fromadmin'    => false,
+				 'emotes'       => true,
+				 'defs'         => true,
+				 'constants'    => 'full',
+				 'hook'         => true,
+				 'scripts'      => true,
+				 'link_click'   => true,
+				 'link_replace' => true,
+				 'parse_sc'     => true,
+				 'no_tags'      => false,
+				 'value'        => false,
+				 'nobreak'      => false,
+				 'retain_nl'    => false,
+				 ),
+				 'DESCRIPTION'  =>
+				 array (
+				 'context'      => 'DESCRIPTION',
+				 'fromadmin'    => false,
+				 'emotes'       => true,
+				 'defs'         => true,
+				 'constants'    => 'full',
+				 'hook'         => true,
+				 'scripts'      => true,
+				 'link_click'   => true,
+				 'link_replace' => true,
+				 'parse_sc'     => true,
+				 'no_tags'      => false,
+				 'value'        => false,
+				 'nobreak'      => false,
+				 'retain_nl'    => false,
+				 ),
+				 'BODY'         =>
+				 array (
+				 'context'      => 'BODY',
+				 'fromadmin'    => false,
+				 'emotes'       => true,
+				 'defs'         => true,
+				 'constants'    => 'full',
+				 'hook'         => true,
+				 'scripts'      => true,
+				 'link_click'   => true,
+				 'link_replace' => true,
+				 'parse_sc'     => true,
+				 'no_tags'      => false,
+				 'value'        => false,
+				 'nobreak'      => false,
+				 'retain_nl'    => false,
+				 ),
+				 'WYSIWYG'      =>
+				 array (
+				 'context'      => 'WYSIWYG',
+				 'fromadmin'    => false,
+				 'emotes'       => true,
+				 'defs'         => false,
+				 'constants'    => false,
+				 'hook'         => false,
+				 'scripts'      => true,
+				 'link_click'   => false,
+				 'link_replace' => false,
+				 'parse_sc'     => false,
+				 'no_tags'      => false,
+				 'value'        => false,
+				 'nobreak'      => false,
+				 'retain_nl'    => true,
+				 ),
+				 'USER_BODY'    =>
+				 array (
+				 'context'      => 'USER_BODY',
+				 'fromadmin'    => false,
+				 'emotes'       => true,
+				 'defs'         => false,
+				 'constants'    => 'full',
+				 'hook'         => true,
+				 'scripts'      => false,
+				 'link_click'   => true,
+				 'link_replace' => true,
+				 'parse_sc'     => false,
+				 'no_tags'      => false,
+				 'value'        => false,
+				 'nobreak'      => false,
+				 'retain_nl'    => false,
+				 'nostrip'      => false,
+				 ),
+				 'E_BODY'       =>
+				 array (
+				 'context'      => 'E_BODY',
+				 'fromadmin'    => false,
+				 'emotes'       => false,
+				 'defs'         => true,
+				 'constants'    => 'full',
+				 'hook'         => true,
+				 'scripts'      => false,
+				 'link_click'   => false,
+				 'link_replace' => true,
+				 'parse_sc'     => true,
+				 'no_tags'      => false,
+				 'value'        => false,
+				 'nobreak'      => false,
+				 'retain_nl'    => false,
+				 ),
+				 'E_BODY_PLAIN' =>
+				 array (
+				 'context'      => 'E_BODY_PLAIN',
+				 'fromadmin'    => false,
+				 'emotes'       => false,
+				 'defs'         => true,
+				 'constants'    => 'full',
+				 'hook'         => true,
+				 'scripts'      => false,
+				 'link_click'   => false,
+				 'link_replace' => true,
+				 'parse_sc'     => true,
+				 'no_tags'      => true,
+				 'value'        => false,
+				 'nobreak'      => false,
+				 'retain_nl'    => true,
+				 ),
+				 'LINKTEXT'     =>
+				 array (
+				 'context'      => 'LINKTEXT',
+				 'fromadmin'    => false,
+				 'emotes'       => false,
+				 'defs'         => true,
+				 'constants'    => false,
+				 'hook'         => false,
+				 'scripts'      => true,
+				 'link_click'   => false,
+				 'link_replace' => true,
+				 'parse_sc'     => true,
+				 'no_tags'      => false,
+				 'value'        => false,
+				 'nobreak'      => true,
+				 'retain_nl'    => true,
+				 ),
+				 'RAWTEXT'      =>
+				 array (
+				 'context'      => 'RAWTEXT',
+				 'fromadmin'    => false,
+				 'emotes'       => false,
+				 'defs'         => false,
+				 'constants'    => false,
+				 'hook'         => false,
+				 'scripts'      => true,
+				 'link_click'   => false,
+				 'link_replace' => true,
+				 'parse_sc'     => false,
+				 'no_tags'      => true,
+				 'value'        => false,
+				 'nobreak'      => true,
+				 'retain_nl'    => true,
+				 ),
+				 'NODEFAULT' => array(
+			        'context' => 'NODEFAULT',
+			        'fromadmin' => false,
+			        'emotes' => false,
+			        'defs' => false,
+			        'constants' => false,
+			        'hook' => false,
+			        'scripts' => false,
+			        'link_click' => false,
+			        'link_replace' => false,
+			        'parse_sc' => false,
+			        'no_tags' => false,
+			        'value' => false,
+			        'nobreak' => false,
+			        'retain_nl' => false,
+			        )
+				 );
+
+			$list = $this->tp->getModifierList('super');
+			$this->assertSame($expected, $list);
+
+
+		}
+
 		public function testToText()
 		{
 			$arr = array(
@@ -727,11 +1645,19 @@ while(&#036;row = &#036;sql-&gt;fetch())
 		{
 
 		}
-
+*/
 		public function testPost_toHTML()
 		{
+			$text = "<di style='width:100%'>Test</di>"; // invalid html.
+			$result = $this->tp->post_toHTML($text);
+			$this->assertEmpty($result);
 
-		}*/
+			$text = "<div style='width:100%'>Test</div>"; // valid html.
+			$cleaned = '<div style="width:100%">Test</div>'; // valid and cleaned html.
+			$result = $this->tp->post_toHTML($text);
+			$this->assertSame($cleaned, $result);
+
+		}
 
 		/*
 		public function testAddAllowedTag()
@@ -769,11 +1695,217 @@ while(&#036;row = &#036;sql-&gt;fetch())
 
 		public function testGetAllowedAttributes()
 		{
+			$expected = array (
+			  'default' =>
+			  array (
+			    0 => 'id',
+			    1 => 'style',
+			    2 => 'class',
+			    3 => 'title',
+			    4 => 'lang',
+			    5 => 'accesskey',
+			  ),
+			  'img' =>
+			  array (
+			    0 => 'src',
+			    1 => 'alt',
+			    2 => 'width',
+			    3 => 'height',
+			    4 => 'id',
+			    5 => 'style',
+			    6 => 'class',
+			    7 => 'title',
+			    8 => 'lang',
+			    9 => 'accesskey',
+			  ),
+			  'a' =>
+			  array (
+			    0 => 'href',
+			    1 => 'target',
+			    2 => 'rel',
+			    3 => 'id',
+			    4 => 'style',
+			    5 => 'class',
+			    6 => 'title',
+			    7 => 'lang',
+			    8 => 'accesskey',
+			  ),
+			  'script' =>
+			  array (
+			    0 => 'type',
+			    1 => 'src',
+			    2 => 'language',
+			    3 => 'async',
+			    4 => 'id',
+			    5 => 'style',
+			    6 => 'class',
+			    7 => 'title',
+			    8 => 'lang',
+			    9 => 'accesskey',
+			  ),
+			  'iframe' =>
+			  array (
+			    0 => 'src',
+			    1 => 'frameborder',
+			    2 => 'width',
+			    3 => 'height',
+			    4 => 'id',
+			    5 => 'style',
+			    6 => 'class',
+			    7 => 'title',
+			    8 => 'lang',
+			    9 => 'accesskey',
+			  ),
+			  'input' =>
+			  array (
+			    0 => 'type',
+			    1 => 'name',
+			    2 => 'value',
+			    3 => 'id',
+			    4 => 'style',
+			    5 => 'class',
+			    6 => 'title',
+			    7 => 'lang',
+			    8 => 'accesskey',
+			  ),
+			  'form' =>
+			  array (
+			    0 => 'action',
+			    1 => 'method',
+			    2 => 'target',
+			    3 => 'id',
+			    4 => 'style',
+			    5 => 'class',
+			    6 => 'title',
+			    7 => 'lang',
+			    8 => 'accesskey',
+			  ),
+			  'audio' =>
+			  array (
+			    0 => 'src',
+			    1 => 'controls',
+			    2 => 'autoplay',
+			    3 => 'loop',
+			    4 => 'muted',
+			    5 => 'preload',
+			    6 => 'id',
+			    7 => 'style',
+			    8 => 'class',
+			    9 => 'title',
+			    10 => 'lang',
+			    11 => 'accesskey',
+			  ),
+			  'video' =>
+			  array (
+			    0 => 'autoplay',
+			    1 => 'controls',
+			    2 => 'height',
+			    3 => 'loop',
+			    4 => 'muted',
+			    5 => 'poster',
+			    6 => 'preload',
+			    7 => 'src',
+			    8 => 'width',
+			    9 => 'id',
+			    10 => 'style',
+			    11 => 'class',
+			    12 => 'title',
+			    13 => 'lang',
+			    14 => 'accesskey',
+			  ),
+			  'td' =>
+			  array (
+			    0 => 'colspan',
+			    1 => 'rowspan',
+			    2 => 'id',
+			    3 => 'style',
+			    4 => 'class',
+			    5 => 'title',
+			    6 => 'lang',
+			    7 => 'accesskey',
+			  ),
+			  'th' =>
+			  array (
+			    0 => 'colspan',
+			    1 => 'rowspan',
+			    2 => 'id',
+			    3 => 'style',
+			    4 => 'class',
+			    5 => 'title',
+			    6 => 'lang',
+			    7 => 'accesskey',
+			  ),
+			  'col' =>
+			  array (
+			    0 => 'span',
+			    1 => 'id',
+			    2 => 'style',
+			    3 => 'class',
+			    4 => 'title',
+			    5 => 'lang',
+			    6 => 'accesskey',
+			  ),
+			  'embed' =>
+			  array (
+			    0 => 'src',
+			    1 => 'wmode',
+			    2 => 'type',
+			    3 => 'width',
+			    4 => 'height',
+			    5 => 'id',
+			    6 => 'style',
+			    7 => 'class',
+			    8 => 'title',
+			    9 => 'lang',
+			    10 => 'accesskey',
+			  ),
+			  'x-bbcode' =>
+			  array (
+			    0 => 'alt',
+			    1 => 'id',
+			    2 => 'style',
+			    3 => 'class',
+			    4 => 'title',
+			    5 => 'lang',
+			    6 => 'accesskey',
+			  ),
+			  'label' =>
+			  array (
+			    0 => 'for',
+			    1 => 'id',
+			    2 => 'style',
+			    3 => 'class',
+			    4 => 'title',
+			    5 => 'lang',
+			    6 => 'accesskey',
+			  ),
+			  'source' =>
+			  array (
+			    0 => 'media',
+			    1 => 'sizes',
+			    2 => 'src',
+			    3 => 'srcset',
+			    4 => 'type',
+			    5 => 'id',
+			    6 => 'style',
+			    7 => 'class',
+			    8 => 'title',
+			    9 => 'lang',
+			    10 => 'accesskey',
+			  ),
+			);
+
+
+
+
             $result = $this->tp->getAllowedAttributes();
+			$this->assertSame($expected, $result);
 
-            $true = is_array($result) && in_array('style',$result['img']);
 
-            $this->assertTrue($true);
+		//	var_export($result);
+          //  $true = is_array($result) && in_array('style',$result['img']);
+
+          //  $this->assertTrue($true);
 		}
 /*
 		public function testSetScriptTags()
@@ -873,7 +2005,7 @@ while(&#036;row = &#036;sql-&gt;fetch())
 			$tests = array(
 				0   => array(
 					'input'     => array('user_image'=>'-upload-avatartest.png'),
-					'parms'     => array('w'=>50, 'h'=>50),
+					'parms'     => array('w'=>50, 'h'=>50, 'crop'=>false),
 					'expected'  => array(
 									"thumb.php?src=%7Be_AVATAR%7Dupload%2Favatartest.png&amp;w=50&amp;h=50",
 									"class='img-rounded rounded user-avatar'"
@@ -881,7 +2013,7 @@ while(&#036;row = &#036;sql-&gt;fetch())
 				),
 				1   => array(
 					'input'     => array('user_image'=>'avatartest.png'),
-					'parms'     => array('w'=>50, 'h'=>50),
+					'parms'     => array('w'=>50, 'h'=>50, 'crop'=>false),
 					'expected'  => array(
 									"thumb.php?src=%7Be_AVATAR%7Ddefault%2Favatartest.png&amp;w=50&amp;h=50",
 									"class='img-rounded rounded user-avatar'"
@@ -889,7 +2021,7 @@ while(&#036;row = &#036;sql-&gt;fetch())
 				),
 				2   => array(
 					'input'     => array('user_image'=>''),
-					'parms'     => array('w'=>50, 'h'=>50),
+					'parms'     => array('w'=>50, 'h'=>50, 'crop'=>false),
 					'expected'  => array(
 									"thumb.php?src=%7Be_IMAGE%7Dgeneric%2Fblank_avatar.jpg&amp;w=50&amp;h=50",
 									"class='img-rounded rounded user-avatar'"
@@ -897,7 +2029,7 @@ while(&#036;row = &#036;sql-&gt;fetch())
 				),
 				3   => array(
 					'input'     => array('user_image'=>'https://mydomain.com/remoteavatar.jpg'),
-					'parms'     => array('w'=>50, 'h'=>50),
+					'parms'     => array('w'=>50, 'h'=>50, 'crop'=>false,),
 					'expected'  => array(
 									"src='https://mydomain.com/remoteavatar.jpg'",
 									"class='img-rounded rounded user-avatar'",
@@ -906,12 +2038,12 @@ while(&#036;row = &#036;sql-&gt;fetch())
 				),
 				4   => array(
 					'input'     => array('user_image'=>'', 'user_id'=>1),
-					'parms'     => array('w'=>50, 'h'=>50, 'link'=>true),
+					'parms'     => array('w'=>50, 'h'=>50, 'crop'=>false, 'link'=>true),
 					'expected'  => array(
 									"thumb.php?src=%7Be_IMAGE%7Dgeneric%2Fblank_avatar.jpg&amp;w=50&amp;h=50",
 									"class='img-rounded rounded user-avatar'",
 									"<a class='e-tip' title=",
-									"usersettings.php"
+									e107::getUrl()->create('user/myprofile/edit')
 								)
 				),
 				5   => array(
@@ -924,15 +2056,16 @@ while(&#036;row = &#036;sql-&gt;fetch())
 				),
 				6   => array(
 					'input'     => array('user_image'=>'avatartest.png'),
-					'parms'     => array('w'=>30, 'h'=>30, 'shape'=>'circle', 'alt'=>'mytitle'),
+					'parms'     => array('w'=>30, 'h'=>30, 'crop'=>false, 'shape'=>'circle', 'alt'=>'mytitle'),
 					'expected'  => array(
 									"thumb.php?src=%7Be_AVATAR%7Ddefault%2Favatartest.png&amp;w=30&amp;h=30",
-									"class='img-circle user-avatar'",
+									"class='img-circle rounded-circle user-avatar'",
 									'alt="mytitle"',
 								)
 				),
 				/** @fixme - doesn't pass under CLI  */
-			/*	6   => array(
+				/*
+				7   => array(
 					'input'     => array('user_image'=>'avatartest.png'),
 					'parms'     => array('w'=>50, 'h'=>50, 'crop'=>true, 'base64'=>true, 'shape'=>'circle'),
 					'expected'  => array(
@@ -944,12 +2077,12 @@ while(&#036;row = &#036;sql-&gt;fetch())
 
 			);
 
-			foreach($tests as $var)
+			foreach($tests as $index => $var)
 			{
 				$result = $this->tp->toAvatar($var['input'], $var['parms']);
 				foreach($var['expected'] as $str)
 				{
-					$this->assertStringContainsString($str, $result);
+					$this->assertStringContainsString($str, $result, "Failed on index #".$index);
 				}
 				//var_dump($result);
 
@@ -1029,7 +2162,7 @@ while(&#036;row = &#036;sql-&gt;fetch())
 			$result6 = preg_replace('/"([^"]*)thumb.php/','"thumb.php', $result6);
 
 		//	$result6 = str_replace($tempDir, '', $result6);
-
+			$expected = str_replace("\r", '', $expected);
 			$this->assertSame($expected,$result6);
 			$this->tp->setConvertToWebP(false);
 
@@ -1138,12 +2271,26 @@ while(&#036;row = &#036;sql-&gt;fetch())
 		{
 
 		}
-
+*/
 		public function testIsImage()
 		{
+			$this->assertTrue($this->tp->isImage('/path-to-file/myfile.jpg'));
+			$this->assertFalse($this->tp->isImage('/path-to-file/myfile.mov'));
 
 		}
 
+		public function testtoAudio()
+		{
+			$expected = '<audio controls style="max-width:100%" >
+<source src="/e107_media/000000test/myfile.mp3" type="audio/mpeg">
+Your browser does not support the audio tag.
+</audio>';
+
+			$result = $this->tp->toAudio('{e_MEDIA}myfile.mp3');
+			$this->assertEquals($expected, $result);
+
+		}
+/*
 		public function testToVideo()
 		{
 
@@ -1172,6 +2319,7 @@ while(&#036;row = &#036;sql-&gt;fetch())
 				array("before http://something.com after",  'before <a class="e-url" href="http://something.com" >http://something.com</a> after'),
 				array("before https://someplace.com after", 'before <a class="e-url" href="https://someplace.com" >https://someplace.com</a> after'),
 				array("before (www.something.com) after",   'before (<a class="e-url" href="http://www.something.com" >www.something.com</a>) after'),
+				array('', ''),
 			);
 
 			foreach($tests as $row)
@@ -1250,6 +2398,9 @@ while(&#036;row = &#036;sql-&gt;fetch())
 */
 		public function testFilter()
 		{
+			$url = 'http://www.domain.com/folder/folder2//1234_1_0.jpg';
+
+			// Filter tests.
 
 			$tests = array(
 				0   => array('input' => 'test123 xxx',      'mode' => 'w',        'expected' => 'test123xxx'),
@@ -1258,16 +2409,50 @@ while(&#036;row = &#036;sql-&gt;fetch())
 				3   => array('input' => 'test123 xxx',      'mode' => 'wds',      'expected' => 'test123 xxx'),
 				4   => array('input' => 'test123 xxx.jpg',  'mode' => 'file',     'expected' => 'test123-xxx.jpg'),
 				5   => array('input' => '2.1.4 (test)',     'mode' => 'version',  'expected' => '2.1.4'),
+				6   => array('input' => $url,               'mode'=>'url',        'expected' => $url),
+				7   => array('input' => array('1', 'xxx'),  'mode'=>'str',        'expected' => array('1', 'xxx')),
+				8   => array('input' => 'myemail@email.com',  'mode'=>'email',    'expected' => 'myemail@email.com'),
 			);
 
-			foreach($tests as $var)
+			foreach($tests as $index=>$var)
 			{
 				$result = $this->tp->filter($var['input'],$var['mode']);
-				$this->assertEquals($var['expected'],$result);
+				$this->assertEquals($var['expected'],$result, "Failed on index: ".$index);
 			}
 
+			// Validate.
+
+			$tests2 = array(
+				0   => array('input' => 'http://www.domain.com/folder/file.zip', 'mode'=>'url'), // good url
+				1   => array('input' => 'http:/www.domain.com/folder/file.zip', 'mode'=>'url'), // bad url
+				2   => array('input' => array('1', 'xxx'),  'mode'=>'int'), // good and bad integer
+				3   => array('input' => 'myemail@email.com',  'mode'=>'email'), // good email
+				4   => array('input' => 'bad-email.com',  'mode'=>'email'), // bad email
+				5   => array('input' => '123.23.123.125',  'mode'=>'ip'), // good ip
+				6   => array('input' => 'xx.23.123.125',  'mode'=>'ip'), // bad ip
+			);
+
+			$expected2 = array (
+			  0       => 'http://www.domain.com/folder/file.zip',
+			  1       => false,
+			  2       =>  array ( 1, false),
+			  3       => 'myemail@email.com',
+			  4       => false,
+			  5       => '123.23.123.125',
+			  6       => false,
+			);
+
+		//	$ret = [];
+			foreach($tests2 as $index=>$var)
+			{
+				$result = $this->tp->filter($var['input'],$var['mode'], true);
+			//	$ret[$index] = $result;
+				$this->assertSame($expected2[$index], $result);
+			}
 
 		}
+
+
 
 		public function testCleanHtml()
 		{

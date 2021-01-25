@@ -160,7 +160,7 @@ class _system_cron
 		$userVars = array();
 		foreach($userCon['user'] as $k=>$v)
 		{
-			if(substr($k,0,2) == 'e_')
+			if(strpos($k, 'e_') === 0)
 			{
 				$userVars[$k] = $v;
 			}
@@ -235,7 +235,7 @@ class _system_cron
 			
 		if (CRON_MAIL_DEBUG)
 		{
-			e107::getLog()->e_log_event(10,debug_backtrace(),'DEBUG','CRON Email','Email run started',FALSE,LOG_TO_ROLLING);
+			e107::getLog()->addEvent(10,debug_backtrace(),'DEBUG','CRON Email','Email run started',FALSE,LOG_TO_ROLLING);
 		}
 
 		$mailManager = e107::getBulkEmail();
@@ -249,7 +249,7 @@ class _system_cron
 		
 		if (CRON_MAIL_DEBUG)
 		{
-			e107::getLog()->e_log_event(10,debug_backtrace(),'DEBUG','CRON Email','Email run completed',FALSE,LOG_TO_ROLLING);
+			e107::getLog()->addEvent(10,debug_backtrace(),'DEBUG','CRON Email','Email run completed',FALSE,LOG_TO_ROLLING);
 		}
 	}
 	
@@ -259,14 +259,14 @@ class _system_cron
 		if (CRON_MAIL_DEBUG)
 		{
 			$e107 = e107::getInstance();
-			$e107->admin_log->e_log_event(10,debug_backtrace(),'DEBUG','CRON Bounce','Bounce processing started',FALSE,LOG_TO_ROLLING);
+			$e107->admin_log->addEvent(10,debug_backtrace(),'DEBUG','CRON Bounce','Bounce processing started',FALSE,LOG_TO_ROLLING);
 		}
 		require_once(e_HANDLER.'pop_bounce_handler.php');
 		$mailBounce = new pop3BounceHandler();
 		$mailBounce->processBounces();
 		if (CRON_MAIL_DEBUG)
 		{
-			$e107->admin_log->e_log_event(10,debug_backtrace(),'DEBUG','CRON Bounce','Bounce processing completed',FALSE,LOG_TO_ROLLING);
+			$e107->admin_log->addEvent(10,debug_backtrace(),'DEBUG','CRON Bounce','Bounce processing completed',FALSE,LOG_TO_ROLLING);
 		}
 	}
 	
@@ -276,14 +276,14 @@ class _system_cron
 		if (CRON_RETRIGGER_DEBUG)
 		{
 			$e107 = e107::getInstance();
-			$e107->admin_log->e_log_event(10,debug_backtrace(),'DEBUG','CRON Ban retrigger','Retrigger processing started',FALSE,LOG_TO_ROLLING);
+			$e107->admin_log->addEvent(10,debug_backtrace(),'DEBUG','CRON Ban retrigger','Retrigger processing started',FALSE,LOG_TO_ROLLING);
 		}
 		require_once(e_HANDLER.'iphandler_class.php');
 		$ipManager = new banlistManager();
 		$ipManager->banRetriggerAction();
 		if (CRON_RETRIGGER_DEBUG)
 		{
-			e107::getLog()->e_log_event(10,debug_backtrace(),'DEBUG','CRON Ban Retrigger','Retrigger processing completed',FALSE,LOG_TO_ROLLING);
+			e107::getLog()->addEvent(10,debug_backtrace(),'DEBUG','CRON Ban Retrigger','Retrigger processing completed',FALSE,LOG_TO_ROLLING);
 		}
 	}
 	
@@ -428,12 +428,12 @@ class CronParser
 	 */
 	function expand_ranges($str)
 	{
-		if (strstr($str,  ","))
+		if (strpos($str, ",") !== false)
 		{
 			$arParts = explode(',', $str);
 			foreach ($arParts AS $part)
 			{
-				if (strstr($part, '-'))
+				if (strpos($part, '-') !== false)
 				{
 					$arRange = explode('-', $part);
 					for ($i = $arRange[0]; $i <= $arRange[1]; $i++)
@@ -447,7 +447,7 @@ class CronParser
 				}
 			}
 		}
-		elseif (strstr($str,  '-'))
+		elseif (strpos($str, '-') !== false)
 		{
 			$arRange = explode('-', $str);
 			for ($i = $arRange[0]; $i <= $arRange[1]; $i++)
@@ -697,34 +697,30 @@ class CronParser
 	function _getLastMonth()
 	{
 		$months = $this->_getMonthsArray();
-		$month = array_pop($months);
 
-		return $month;
+		return array_pop($months);
 	}
 
 	function _getLastDay($month, $year)
 	{
 		//put the available days for that month into an array
 		$days = $this->_getDaysArray($month, $year);
-		$day = array_pop($days);
 
-		return $day;
+		return array_pop($days);
 	}
 
 	function _getLastHour()
 	{
 		$hours = $this->_getHoursArray();
-		$hour = array_pop($hours);
 
-		return $hour;
+		return array_pop($hours);
 	}
 
 	function _getLastMinute()
 	{
 		$minutes = $this->_getMinutesArray();
-		$minute = array_pop($minutes);
 
-		return $minute;
+		return array_pop($minutes);
 	}
 
 	//remove the out of range array elements. $arr should be sorted already and does not contain duplicates
@@ -967,11 +963,11 @@ class cronScheduler
 	 */
 	public function __construct()
 	{
-		global $_E107, $pref;
+		global $_E107;
 
 		$this->cron = new CronParser();
 		$this->debug = $_E107['debug'];
-		$this->pref = $pref;
+		$this->pref = e107::getPref();
 	}
 
 	/**
@@ -1157,7 +1153,7 @@ class cronScheduler
 			$pwd = str_replace('token=', '', $pwd);
 		}
 
-		if(($this->pref['e_cron_pwd'] != $pwd) || empty($this->pref['e_cron_pwd']))
+		if(empty($this->pref['e_cron_pwd']) || (varset($this->pref['e_cron_pwd']) != $pwd))
 		{
 			if(!empty($pwd))
 			{
@@ -1165,7 +1161,7 @@ class cronScheduler
 				$msg .= "<br /><br />";
 				$msg .= "Sent from cron: " . $pwd;
 				$msg .= "<br />";
-				$msg .= "Stored in e107: " . $this->pref['e_cron_pwd'];
+				$msg .= "Stored in e107: " . varset($this->pref['e_cron_pwd'], "(none set)");
 				$msg .= "<br /><br />";
 				$msg .= "You should regenerate the cron command in admin and enter it again in your server configuration.";
 

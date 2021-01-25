@@ -363,7 +363,9 @@ define("LAN_HEIGHT","Height");
 
 define("LAN_ON","On");
 define("LAN_OFF", "Off");
+define("LAN_DISABLE", "Disable");
 define("LAN_DISABLED","Disabled");
+define("LAN_ENABLE", "Enable");
 define("LAN_ENABLED", "Enabled");
 define("LAN_BOOL_REVERSE", "Invert");
 
@@ -577,4 +579,4 @@ define("LAN_ROBOTS_NOFOLLOW", "Prevent search engines from following links in th
 define("LAN_ROBOTS_NOARCHIVE", "Prevent cached copies of this item from appearing in search results.");
 define("LAN_ROBOTS_NOIMAGE", "Prevent search engines from indexing images of this item.");
 
-
+define("LAN_NAVIGATION", "Navigation");

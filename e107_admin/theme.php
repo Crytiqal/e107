@@ -15,7 +15,7 @@
  *
 */
 
-require_once("../class2.php");
+require_once(__DIR__.'/../class2.php');
 
 if (!getperms("1|TMP"))
 {
@@ -129,7 +129,7 @@ class theme_admin extends e_admin_dispatcher
 				case 'preview':
 					// Theme Info Ajax
 					$tm = (string) $_GET['id'];
-					$data = $themec->getThemeInfo($tm);
+					$data = e107::getTheme($tm)->get(); // $themec->getThemeInfo($tm);
 					echo $themec->renderThemeInfo($data);
 				//	exit;
 				break;
@@ -160,7 +160,7 @@ class theme_admin extends e_admin_dispatcher
 			if(!empty($_GET['id']))
 			{
 				$tm = (string) $_GET['id'];
-				$data = $themec->getThemeInfo($tm);
+				$data = e107::getTheme($tm)->get(); // $themec->getThemeInfo($tm);
 				echo $themec->renderThemeInfo($data);
 			}
 
@@ -651,6 +651,7 @@ class theme_admin_ui extends e_admin_ui
 
 		public function ChoosePage()
 		{
+			e107::getTheme()->clearCache();
 			return $this->GridPage();
 		}
 
@@ -737,7 +738,7 @@ class theme_admin_tree_model extends e_tree_model
 		foreach($themeList as $k=>$v)
 		{
 
-			if(!empty($parms['searchqry']) && stripos($v['description'],$parms['searchqry']) === false && stripos($v['folder'],$parms['searchqry']) === false && stripos($v['name'],$parms['searchqry']) === false)
+			if(!empty($parms['searchqry']) && stripos($v['info'],$parms['searchqry']) === false && stripos($v['folder'],$parms['searchqry']) === false && stripos($v['name'],$parms['searchqry']) === false)
 			{
 				continue;
 			}
@@ -831,7 +832,7 @@ class theme_admin_online_tree_model extends e_tree_model
 						'thumbnail'		=> $r['thumbnail'],
 						'url'			=> $r['urlView'],
 						'author'		=> $r['author'],
-						'website'		=> $r['authorUrl'],
+						'website'		=> varset($r['authorUrl']),
 						'compatibility'	=> $r['compatibility'],
 						'description'	=> $r['description'],
 						'price'			=> $r['price'],
@@ -955,13 +956,15 @@ class theme_admin_form_ui extends e_admin_form_ui
 		$infoPath       = e_SELF."?mode=".$_GET['mode']."&id=".$theme['path']."&action=info&iframe=1";
 		$previewPath    = $tp->replaceConstants($theme['thumbnail'],'abs');
 
-		$version = $tp->filter(e_VERSION,'version');
-		$compat = $tp->filter($theme['compatibility'], 'version');
+	//	$version = $tp->filter(e_VERSION,'version');
+	//	$compat = $tp->filter($theme['compatibility'], 'version');
+
 
 		$disabled = '';
 		$mainTitle = TPVLAN_10;
 
-		if(version_compare($compat,$version, '<=') === false)
+	//	if(version_compare($compat,$version, '<=') === false)
+		if(!e107::isCompatible($theme['compatibility']))
 		{
 			$disabled = 'disabled';
 			$mainTitle = defset('TPVLAN_97', "This theme requires a newer version of e107.");
@@ -969,7 +972,7 @@ class theme_admin_form_ui extends e_admin_form_ui
 
 	//	e107::getDebug()->log($theme['path']." - ".$disabled. "  (".$compat.")");
 
-		$main_icon 		= ($pref['sitetheme'] != $theme['path']) ? "<button class='btn btn-default btn-secondary btn-small btn-sm btn-inverse' type='submit' ".$disabled."   name='selectmain[".$theme['path']."]' alt=\"".$mainTitle."\" title=\"".$mainTitle."\" >".$tp->toGlyph('fa-home',array('size'=>'2x'))."</button>" : "<button class='btn btn-small btn-default btn-secondary btn-sm btn-inverse' type='button'>".$tp->toGlyph('fa-check',array('size'=>'2x'))."</button>";
+		$main_icon 		= ($pref['sitetheme'] != $theme['path']) ? "<button  ".$disabled." class='btn btn-default btn-secondary btn-small btn-sm btn-inverse' type='submit'   name='selectmain[".$theme['path']."]' alt=\"".$mainTitle."\" title=\"".$mainTitle."\" >".$tp->toGlyph('fa-home',array('size'=>'2x'))."</button>" : "<button class='btn btn-small btn-default btn-secondary btn-sm btn-inverse' type='button'>".$tp->toGlyph('fa-check',array('size'=>'2x'))."</button>";
 		$info_icon 		= "<a class='btn btn-default btn-secondary btn-small btn-sm btn-inverse e-modal'  data-modal-caption=\"".$theme['name']." ".$theme['version']."\" href='".$infoPath."'  title='".TPVLAN_7."'>".$tp->toGlyph('fa-info-circle',array('size'=>'2x'))."</a>";
 	//	$admin_icon 	= ($pref['admintheme'] != $theme['path'] ) ? "<button class='btn btn-default btn-small btn-sm btn-inverse' type='submit'   name='selectadmin[".$theme['id']."]' alt=\"".TPVLAN_32."\" title=\"".TPVLAN_32."\" >".$tp->toGlyph('fa-gears',array('size'=>'2x'))."</button>" : "<button class='btn btn-small btn-default btn-sm btn-inverse' type='button'>".$tp->toGlyph('fa-check',array('size'=>'2x'))."</button>";
 
@@ -1066,8 +1069,10 @@ class theme_builder extends e_admin_ui
 
 			e107::getMessage()->addDebug("Disable debug to save generated files. ");
 
-
-			$this->themeName = $tp->filter($_GET['newtheme'],'w');
+			if(!empty($_GET['newtheme']))
+			{
+				$this->themeName = $tp->filter($_GET['newtheme'],'w');
+			}
 
 			if(!empty($_GET['src']))
 			{
@@ -1248,7 +1253,7 @@ class theme_builder extends e_admin_ui
 				foreach($matches[1] as $i => $m)
 				{
 					$leg[$m] = strip_tags($matches[3][$i]);
-					if(substr($m,0,5) == 'theme' || $m == "CUSTOMPAGES")
+					if(strpos($m,'theme') === 0 || $m == "CUSTOMPAGES")
 					{
 						$search[] = $matches[0][$i];
 					}
@@ -1634,9 +1639,7 @@ TEMPLATE;
 
 			$frm = e107::getForm();
 
-			$list = e107::getTheme()->clearCache()->getThemeList(); // (e_THEME);
-
-			$folders = array_keys($list);
+			$folders = e107::getTheme()->clearCache()->getList('id'); // array_keys($list);
 
 			$text = $frm->open('copytheme','get','theme.php?mode=convert');
 			$text .= "<table class='table adminform'>

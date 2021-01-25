@@ -118,7 +118,7 @@ class e_session
 	
 	protected $_namespace;
 	protected $_name;
-	protected $_sessionStarted = false; // Fixes lost $_SESSION value problem. 
+	protected static $_sessionStarted = false; // Fixes lost $_SESSION value problem.
 
 	/**
 	 * Validation options
@@ -235,10 +235,11 @@ class e_session
 
         $hashes = hash_algos();
 
-        if ((e_SECURITY_LEVEL >= self::SECURITY_LEVEL_BALANCED) && in_array('sha512', $hashes))
+    //    if ((e_SECURITY_LEVEL >= self::SECURITY_LEVEL_BALANCED) && in_array('sha512', $hashes))
         {
-            ini_set('session.hash_function', 'sha512');
-            ini_set('session.hash_bits_per_character', 5);
+
+          //  ini_set('session.hash_function', 'sha512'); Removed in PHP 7.1
+          //  ini_set('session.hash_bits_per_character', 5); Removed in PHP 7.1
         }
 
         $this->fixSessionFileGarbageCollection();
@@ -476,7 +477,7 @@ class e_session
 	public function start($sessionName = null)
 	{
 	
-		if (isset($_SESSION) && ($this->_sessionStarted == true))
+		if (isset($_SESSION) && (self::$_sessionStarted === true))
 		{
 			return $this;
 		}
@@ -489,8 +490,10 @@ class e_session
 		switch ($this->_sessionSaveMethod)
 		{
 			case 'db':
-				ini_set('session.save_handler', 'user');
+			//	ini_set('session.save_handler', 'user');
+
 				$session = new e_session_db;
+				session_set_save_handler($session, true);
 				$session->setSaveHandler();
 			break;
 
@@ -541,7 +544,7 @@ class e_session
 		
 	
 		session_start();
-		$this->_sessionStarted = true;
+		self::$_sessionStarted = true;
 		return $this;
 	}
 
@@ -588,7 +591,7 @@ class e_session
 		if (!empty($name) && preg_match('#^[0-9a-z_]+$#i', $name))
 		{
 			$this->_name = $name;
-			return session_name($name);
+		//	return session_name($name);
 		}
 		return false;
 	}
@@ -678,7 +681,7 @@ class e_session
 			
 			// TODO event trigger
 			
-			// e107::getAdminLog()->log_event('Session validation failed!', $details, E_LOG_FATAL);
+			// e107::getAdminLog()->add('Session validation failed!', $details, E_LOG_FATAL);
 			// TODO session exception, handle it proper on live site
 			// throw new Exception('');
 			
@@ -944,7 +947,7 @@ class e_core_session extends e_session
 
 		$details .= $status."\n\n---------------------------------\n\n";
 
-		$log = e107::getAdminLog();
+		$log = e107::getLog();
 		$log->addDebug($details);
 
 		if(deftrue('e_DEBUG_SESSION'))
@@ -1064,7 +1067,7 @@ class e_core_session extends e_session
 }
 
 
-class e_session_db
+class e_session_db implements SessionHandlerInterface
 {
 	/**
 	 * @var e_db

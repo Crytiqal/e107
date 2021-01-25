@@ -118,6 +118,97 @@
 			);
 		}
 
+				/**
+		 * @see https://github.com/e107inc/e107/issues/3547
+		 */
+		public function testBlank()
+		{
+		//	$this->_debugPlugin = '_blank';
+
+			$this->pluginInstall('_blank');
+
+		//	$this->pluginUninstall('_blank');
+
+
+		}
+
+
+		public function testPluginScripts()
+		{
+
+			$core = e107::getPlug()->getCorePluginList();
+
+			$exclude = array(
+				'forum/forum_post.php',
+				'forum/forum_viewtopic.php',   // needs a major cleanup.
+				'forum/index.php',
+				'online/online_menu.php', // FIXME missing template for member/new
+				'pm/pm.php', // FIXME contains exit, needs rework.
+				'poll/admin_config.php', // FIXME convert to admin-ui
+				'rss_menu/rss.php', // FIXME rework code into class.
+				'tagcloud/tagcloud_menu.php', // FIXME - strange (PHP bug?), doesn't see the render() method.
+				'tinymce4/wysiwyg.php', // javascript generator.
+			);
+
+			//DEBUG A SPECIFIC FILE :  dir => file
+		//	$focus = array('tagcloud'=>'tagcloud_menu.php');
+
+
+			foreach($core as $plug)
+			{
+				$parm = null; //
+				e107::plugLan($plug, 'global'); // load global language (usually done in class2.php)
+				e107::getConfig()->setPref('plug_installed/'.$plug, 1); // simulate installed.
+
+				$path = e_PLUGIN.$plug;
+				$files = scandir($path);
+				unset($files[0], $files[1]);  // . and ..
+
+				if(!empty($focus) && !isset($focus[$plug]))
+				{
+					continue;
+				}
+
+				foreach($files as $f)
+				{
+					$filePath = $path.'/'.$f;
+
+					if(!empty($focus) && $f !== $focus[$plug])
+					{
+						continue;
+					}
+
+					if(is_dir($filePath) || (strpos($f, '_sql.php') !== false) || strpos($f, '.php') === false || in_array($plug.'/'.$f, $exclude))
+					{
+						continue;
+					}
+
+				//	echo " --- ".$filePath." --- \n";
+					if(empty($focus))
+					{
+						ob_start();
+					}
+					require_once( $filePath);
+					if(empty($focus))
+					{
+						ob_end_clean();
+					}
+				//	echo $plug.'/'.$f."\n";
+
+				}
+
+			}
+
+
+		}
+
+
+
+
+
+
+
+
 		/**
 		 * @see https://github.com/e107inc/e107/issues/3547
 		 */
@@ -133,19 +224,18 @@
 
 			$tp = e107::getParser();
 
-			$result = $tp->parseTemplate("{BANNER=e107promo}",true);
+			$result = $tp->parseTemplate("{BANNER=e107promo}", true);
 			$this->assertStringContainsString('<img class="e-banner img-responsive img-fluid"', $result);
 
-			$result = $tp->parseTemplate("{BANNER=e107promo}",false,
-				e107::getScBatch('banner', true));
+			$result = $tp->parseTemplate("{BANNER=e107promo}", false, e107::getScBatch('banner', true));
 			$this->assertStringContainsString('<img class="e-banner img-responsive img-fluid"', $result);
 
-			$result = $tp->parseTemplate("{BANNER=e107promo}",false);
+			$result = $tp->parseTemplate("{BANNER=e107promo}", false);
 			$this->assertEquals("", $result);
 
 			$this->pluginUninstall('banner');
 
-			$result = $tp->parseTemplate("{BANNER=e107promo}",true);
+			$result = $tp->parseTemplate("{BANNER=e107promo}", true);
 			// The expected value below was the actual observed output when the assertion was written:
 			$this->assertEquals('&nbsp;', $result,
 				"Banner shortcode is not returning an empty value, despite banner being uninstalled");
@@ -181,6 +271,7 @@
 		{
 			$this->pluginInstall('forum');
 			$this->pluginUninstall('forum');
+
 		}
 
 		public function testGallery()
@@ -245,6 +336,76 @@
 		{
 			$this->pluginInstall('tagcloud');
 			$this->pluginUninstall('tagcloud');
+		}
+
+/*
+		public function testThirdParty()
+		{
+
+
+
+
+			$coreList = e107::getPlug()->getCorePluginList();
+			$all = scandir(e_PLUGIN);
+			unset($all[0], $all[1]);
+
+			$diff = array_diff($all, $coreList);
+
+			foreach($diff as $plug)
+			{
+				if(!is_dir(e_PLUGIN.$plug) || !is_dir(e_PLUGIN.$plug.'/tests'))
+				{
+					continue;
+				}
+
+				$tests = scandir(e_PLUGIN.$plug.'/tests');
+				unset($tests[0], $tests[1]);
+
+				foreach($tests as $t)
+				{
+					require_once(e_PLUGIN.$plug.'/tests/'.$t);
+					$Codecept = new \Codeception\Codecept(array(
+					    'steps' => true,
+					    'verbosity' => 1,
+					    // some other options (see Codeception docs/sources)
+					 ));
+
+				//	 var_export($Codecept);
+
+					 $Codecept->run('unit');
+		//			require_once '/path/to/codeception/autoload.php';
+
+
+
+				}
+
+
+
+			}
+
+
+			//array_intersect(
+
+
+
+		}*/
+
+		public function  testVstore()
+		{
+			if(!is_dir(e_PLUGIN."vstore"))
+			{
+				return ;
+			}
+
+			$this->pluginInstall('vstore');
+			$this->pluginRefresh('vstore');
+
+			$links = e107::getDb()->retrieve('links', '*', 'link_owner = "vstore"', true);
+			$this->assertNotEmpty($links);
+			$this->assertCount(2, $links);
+
+			$this->pluginUninstall('vstore');
+
 		}
 
 		public function testplugInstalledStatus()
@@ -384,11 +545,16 @@
 
 		}
 
-
+		private function pluginRefresh($pluginDir)
+		{
+			$return_text = e107::getPlugin()->refresh($pluginDir);
+		}
 
 
 		private function pluginInstall($pluginDir)
 		{
+			e107::setRegistry('core/form/related'); // reset.
+
 			e107::getPlugin()->uninstall($pluginDir);
 
 			$return_text = e107::getPlugin()->install($pluginDir);
@@ -1286,3 +1452,5 @@ DATA
 			);
 		}
 	}
+
+

@@ -44,8 +44,8 @@ class e107_traffic
 	
 	/**
 	 * @return float         Time difference
-	 * @param time $tStart   Start time - unexploded microtime result
-	 * @param time $tStop    Finish time - unexploded microtime result
+	 * @param string time $tStart   Start time - unexploded microtime result
+	 * @param string time $tStop    Finish time - unexploded microtime result
 	 * @desc Calculate time difference between to microtimes
 	 * @access public
 	 */
@@ -53,6 +53,12 @@ class e107_traffic
 	{
 		$tFrom = explode(' ', $tStart);
 		$tTo = explode(' ', $tFinish);
+
+		if(!isset($tFrom[1]))
+		{
+			$tFrom[1] = 0;
+		}
+
 		$tTot = ((float) $tTo[0] + (float) $tTo[1]) - ((float) $tFrom[0] + (float) $tFrom[1]);
 		return $tTot;
 	}

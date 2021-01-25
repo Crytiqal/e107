@@ -19,7 +19,7 @@
 
 // [debug=8] shows the operations on major table update
 
-require_once('../class2.php');
+require_once(__DIR__.'/../class2.php');
 require_once(e_HANDLER.'db_table_admin_class.php');
 e107::includeLan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_e107_update.php');
 // Modified update routine - combines checking and update code into one block per function
@@ -76,20 +76,7 @@ $dont_check_update = false;
 
 if (!$dont_check_update)
 {
-	/*
-	if ($sql->db_Select('plugin', 'plugin_id, plugin_version, plugin_path', 'plugin_installflag=1'))
-	{
-		while ($row = $sql->db_Fetch())
-		{  // Mark plugins for update which have a specific update file, or a plugin.php file to check
-			if(is_readable(e_PLUGIN.$row['plugin_path'].'/'.$row['plugin_path'].'_update_check.php') || is_readable(e_PLUGIN.$row['plugin_path'].'/plugin.php') || is_readable(e_PLUGIN.$row['plugin_path'].'/'.$row['plugin_path'].'_setup.php'))
-			{
-				$dbupdateplugs[$row['plugin_path']] = $row['plugin_version'];
-				//TODO - Add support for {plugins}_setup.php upgrade check and routine. 
-			}
-		}
-	}
-	*/
-	
+
 	if($dbupdateplugs = e107::getConfig('core')->get('plug_installed'))
 	{
 		// Read in each update file - this will add an entry to the $dbupdatep array if a potential update exists
@@ -470,7 +457,7 @@ function update_core_prefs($type='')
 	global $e107info; // $pref,  $pref must be kept as global 
 	
 	$pref = e107::getConfig('core', true, true)->getPref();
-	$admin_log = e107::getAdminLog();
+	$admin_log = e107::getLog();
 	$do_save = FALSE;
 	$should = get_default_prefs();
 
@@ -530,7 +517,7 @@ function update_core_database($type = '')
 	/** @var db_verify $dbv */
 	$dbv =  e107::getSingleton('db_verify', e_HANDLER."db_verify_class.php");
 
-	$log = e107::getAdminLog();
+	$log = e107::getLog();
 
 	if($plugUpgradeReq = e107::getPlugin()->updateRequired())
 	{
@@ -758,7 +745,7 @@ function update_706_to_800($type='')
 
 	//$mes = new messageLog;		// Combined logging and message displaying handler
 	//$mes = e107::getMessage();
-	$log 	= e107::getAdminLog();		// Used for combined logging and message displaying
+	$log 	= e107::getLog();		// Used for combined logging and message displaying
 	$sql 	= e107::getDb();
 	$sql2 	= e107::getDb('sql2');
 	$tp 	= e107::getParser();
@@ -1236,10 +1223,10 @@ function update_706_to_800($type='')
 			// catch_error($sql);
 		  }
 	    }
-	    else
-		{
+	//    else
+	//	{
 			// Got a strange error here
-		}
+	//	}
 	  }
 	}
 
@@ -1383,7 +1370,7 @@ function update_706_to_800($type='')
 	if ($nt_changed)
 	{
 		$s_prefs = $tp -> toDB($notify_prefs);
-		$s_prefs = $eArrayStorage -> WriteArray($s_prefs);
+		$s_prefs = e107::serialize($s_prefs);
 		// Could we use $sysprefs->set($s_prefs,'notify_prefs') instead - avoids caching problems  ????
 		$status = ($sql -> update("core", "e107_value='".$s_prefs."' WHERE e107_name='notify_prefs'") !== FALSE) ? E_MESSAGE_DEBUG : E_MESSAGE_ERROR;
 		$message = str_replace('[x]',$nt_changed,LAN_UPDATE_20);
@@ -1522,7 +1509,7 @@ function update_706_to_800($type='')
 		if ($just_check) return update_needed('Avatar paths require updating.');
 		foreach($avatar_images as $av)
 		{
-			$apath = (strstr($av['path'],'public/')) ? e_AVATAR_UPLOAD : e_AVATAR_DEFAULT;
+			$apath = (strpos($av['path'], 'public/') !== false) ? e_AVATAR_UPLOAD : e_AVATAR_DEFAULT;
 			
 			if(rename($av['path'].$av['fname'], $apath. $av['fname'])===false)
 			{
@@ -1663,10 +1650,10 @@ function update_706_to_800($type='')
 		$med->import('page',e_IMAGE.'custom');
 		
 	}
-	else 
-	{
+//	else
+//	{
 //		$log->addDebug("Media COUNT was ".$count. " LINE: ".__LINE__);
-	}
+//	}
 	
 	// Check for Legacy Download Images. 
 
@@ -1748,12 +1735,14 @@ function update_706_to_800($type='')
 		(0, '_icon', '_icon_48', 'Icons 48px', 'Available where icons are used in admin. ', 253, '', 0),
 		(0, '_icon', '_icon_64', 'Icons 64px', 'Available where icons are used in admin. ', 253, '', 0);
 		";
-		
-		if(!$sql->gen($query))
-		{
+
+		$sql->gen($query);
+
+	//	if(!$sql->gen($query))
+	//	{
 			// echo "mysyql error";
 		 	// error or already exists.	
-		}
+	//	}
 		
 		$med->importIcons(e_PLUGIN);
 		$med->importIcons(e_IMAGE."icons/");
@@ -1898,9 +1887,9 @@ function core_media_import($cat,$epath)
 		'media_type'	=> $f['mime']
 		);
 
-		if(!$sql->db_Select('core_media','media_url',"media_url = '".$fullpath."' LIMIT 1"))
+		if(!$sql->select('core_media','media_url',"media_url = '".$fullpath."' LIMIT 1"))
 		{
-			if($sql->db_Insert("core_media",$insert))
+			if($sql->insert("core_media",$insert))
 			{
 				$mes->add("Importing Media: ".$f['fname'], E_MESSAGE_SUCCESS); 	
 			}

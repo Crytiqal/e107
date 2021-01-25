@@ -16,12 +16,12 @@ if(!defined('e107_INIT'))
 	exit;
 }
 
-
+// e107::lan('theme');
 
 class theme implements e_theme_render
 {
 
-    function __construct()
+    public function init()
     {
 
         e107::meta('viewport',"width=device-width, initial-scale=1.0");
@@ -40,6 +40,8 @@ class theme implements e_theme_render
     }
 
 
+
+
     /**
      * @param string $caption
      * @param string $text
@@ -47,11 +49,12 @@ class theme implements e_theme_render
      * @param array $info : current style and other menu data.
      * @return null
      */
-    public function tablestyle($caption, $text, $id='', $info=array())
+    public function tablestyle($caption, $text, $id=null, $info=array())
 	{
 
 
-		$style = $info['setStyle']; //	global $style; // no longer needed.
+
+		$style = is_string($info['setStyle']) ? $info['setStyle'] : ''; //	global $style; // no longer needed.
 
 	    echo "<!-- tablestyle: style=".$style." id=".$id." -->\n\n";
 

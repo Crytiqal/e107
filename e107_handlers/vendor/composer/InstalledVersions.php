@@ -29,7 +29,7 @@ private static $installed = array (
     'aliases' => 
     array (
     ),
-    'reference' => '1f38b3b3dd231c274f4df1a529883655108b611e',
+    'reference' => 'f9492a8c89860284979e9b947dc04836bc20d33b',
     'name' => 'e107inc/e107',
   ),
   'versions' => 
@@ -41,7 +41,16 @@ private static $installed = array (
       'aliases' => 
       array (
       ),
-      'reference' => '1f38b3b3dd231c274f4df1a529883655108b611e',
+      'reference' => 'f9492a8c89860284979e9b947dc04836bc20d33b',
+    ),
+    'firebase/php-jwt' => 
+    array (
+      'pretty_version' => 'v5.2.0',
+      'version' => '5.2.0.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => 'feb0e820b8436873675fd3aca04f3728eb2185cb',
     ),
     'guzzlehttp/psr7' => 
     array (
@@ -54,12 +63,12 @@ private static $installed = array (
     ),
     'hybridauth/hybridauth' => 
     array (
-      'pretty_version' => '3.3.0',
-      'version' => '3.3.0.0',
+      'pretty_version' => '3.6.0',
+      'version' => '3.6.0.0',
       'aliases' => 
       array (
       ),
-      'reference' => '51cb2ad2f04d175d298b51e919868dec1d4d8b04',
+      'reference' => '222ab4e6ee6ffd81caa77283142f3aa97afa5863',
     ),
     'ifsnop/mysqldump-php' => 
     array (
@@ -81,12 +90,12 @@ private static $installed = array (
     ),
     'matthiasmullie/minify' => 
     array (
-      'pretty_version' => '1.3.63',
-      'version' => '1.3.63.0',
+      'pretty_version' => '1.3.65',
+      'version' => '1.3.65.0',
       'aliases' => 
       array (
       ),
-      'reference' => '9ba1b459828adc13430f4dd6c49dae4950dc4117',
+      'reference' => '227f19062451c55a797e0cc667ef983834e6580c',
     ),
     'matthiasmullie/path-converter' => 
     array (
@@ -99,12 +108,21 @@ private static $installed = array (
     ),
     'phpmailer/phpmailer' => 
     array (
-      'pretty_version' => 'v6.1.6',
-      'version' => '6.1.6.0',
+      'pretty_version' => 'v6.2.0',
+      'version' => '6.2.0.0',
       'aliases' => 
       array (
       ),
-      'reference' => 'c2796cb1cb99d7717290b48c4e6f32cb6c60b7b3',
+      'reference' => 'e38888a75c070304ca5514197d4847a59a5c853f',
+    ),
+    'phpseclib/phpseclib' => 
+    array (
+      'pretty_version' => '2.0.30',
+      'version' => '2.0.30.0',
+      'aliases' => 
+      array (
+      ),
+      'reference' => '136b9ca7eebef78be14abf90d65c5e57b6bc5d36',
     ),
     'psr/http-message' => 
     array (

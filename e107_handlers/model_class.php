@@ -265,7 +265,7 @@ class e_object
 	 *
 	 * @param string $key
 	 * @param mixed $value
-	 * @return e_tree_model
+	 * @return mixed|e_tree_model
 	 */
 	public function setParam($key, $value)
 	{
@@ -334,7 +334,7 @@ class e_object
 	 */
 	public function toString($AddSlashes = false)
 	{
-		return (string) e107::getArrayStorage()->WriteArray($this->toArray(), $AddSlashes);
+		return (string) e107::serialize($this->toArray(), $AddSlashes);
 	}
 
 	/**
@@ -590,7 +590,7 @@ class e_model extends e_object
 	/**
 	 * Optional DB table - used for auto-load data from the DB
 	 * @param string $table
-	 * @return e_model
+	 * @return string
 	 */
 	public function getModelTable()
 	{
@@ -665,10 +665,16 @@ class e_model extends e_object
 
 		$eurl = e107::getUrl();
 
-		if(empty($options)) $options = array();
-		elseif(!is_array($options)) parse_str($options, $options);
+	    if (empty($options))
+	    {
+		    $options = array();
+	    }
+	    elseif(is_string($options))
+	    {
+		    parse_str($options, $options);
+	    }
 
-		$vars = $this->toArray();
+	    $vars = $this->toArray();
 		if(!isset($options['allow']) || empty($options['allow']))
 		{
 			if(vartrue($urldata['vars']) && is_array($urldata['vars']))
@@ -1404,14 +1410,14 @@ class e_model extends e_object
 
 		if(!empty($logData))
 		{
-			e107::getAdminLog()->addArray($logData);
+			e107::getLog()->addArray($logData);
 		}
 		else
 		{
-			e107::getAdminLog()->addError($message,false);
+			e107::getLog()->addError($message,false);
 		}
 
-		e107::getAdminLog()->save('ADMINUI_04', E_LOG_WARNING);
+		e107::getLog()->save('ADMINUI_04', E_LOG_WARNING);
 
 		return $this;
 	}
@@ -1823,11 +1829,11 @@ class e_model extends e_object
 			$value = $this->getData($key);
 			if(is_array($value))
 			{
-				return e107::getArrayStorage()->WriteArray($value, $AddSlashes);
+				return e107::serialize($value, $AddSlashes);
 			}
 			return (string) $value;
 		}
-		return (string) e107::getArrayStorage()->WriteArray($this->toArray(), $AddSlashes);
+		return (string) e107::serialize($this->toArray(), $AddSlashes);
 	}
 
 	public function destroy()
@@ -2300,7 +2306,7 @@ class e_front_model extends e_model
 		}
 
 	//	$newData = $this->getPostedData();
-		e107::getAdminLog()->addArray($data,$oldData);
+		e107::getLog()->addArray($data,$oldData);
 	//	$this->addMessageDebug("NEWD".print_a($data,true));
 
 		$tp = e107::getParser();
@@ -2842,9 +2848,9 @@ class e_front_model extends e_model
 		}
 		$this->clearCache()->addMessageSuccess(LAN_UPDATED. " #".$this->getId());
 
-		e107::getAdminLog()->addSuccess('TABLE: '.$table, false);
-		e107::getAdminLog()->addSuccess('WHERE: '.$qry['WHERE'], false);
-		e107::getAdminLog()->save('ADMINUI_02');
+		e107::getLog()->addSuccess('TABLE: '.$table, false);
+		e107::getLog()->addSuccess('WHERE: '.$qry['WHERE'], false);
+		e107::getLog()->save('ADMINUI_02');
 
 
 		return $res;
@@ -3038,8 +3044,8 @@ class e_admin_model extends e_front_model
 			return false;
 		}
 
-	    e107::getAdminLog()->addSuccess('TABLE: '.$table, false);
-		e107::getAdminLog()->save('ADMINUI_01');
+	    e107::getLog()->addSuccess('TABLE: '.$table, false);
+		e107::getLog()->save('ADMINUI_01');
 	//	e107::getAdminLog()->clear()->addSuccess($table,false)->addArray($sqlQry)->save('ADMINUI_01');
 
 		// Set the reutrned ID
@@ -3139,8 +3145,8 @@ class e_admin_model extends e_front_model
 			if($table != 'admin_log')
 			{
 				$logData = array('TABLE'=>$table, 'WHERE'=>$where);
-				e107::getAdminLog()->addSuccess($table,false);
-				e107::getAdminLog()->addArray($logData)->save('ADMINUI_03');
+				e107::getLog()->addSuccess($table,false);
+				e107::getLog()->addArray($logData)->save('ADMINUI_03');
 			}
 
 			$this->clearCache();
@@ -3571,7 +3577,9 @@ class e_tree_model extends e_front_model
 	 */
 	protected function countResults($sql)
 	{
-		$this->_total = is_int($sql->total_results) ? $sql->total_results : false; //requires SQL_CALC_FOUND_ROWS in query - see db handler
+		$total = $sql->foundRows();
+		$this->_total = is_int($total) ? $total : false; //requires SQL_CALC_FOUND_ROWS in query - see db handler
+
 		if(false === $this->_total && $this->getModelTable() && !$this->getParam('nocount'))
 		{
 			//SQL_CALC_FOUND_ROWS not found in the query, do one more query
@@ -3600,7 +3608,7 @@ class e_tree_model extends e_front_model
 	protected function prepareSimulatedPagination()
 	{
 		$db_query = $this->getParam('db_query');
-		$db_query = preg_replace_callback("/LIMIT ([\d]+)[ ]*(?:,|OFFSET){0,1}[ ]*([\d]*)/i", function($matches)
+		$db_query = preg_replace_callback("/LIMIT ([\d]+)[ ]*(?:,|OFFSET)?[ ]*([\d]*)/i", function($matches)
 		{
 			// Count only
 			if (empty($matches[2]))
@@ -3800,7 +3808,7 @@ class e_tree_model extends e_front_model
 		{
 			return $this->getNode($node_id)->toString($AddSlashes);
 		}
-		return (string) e107::getArrayStorage()->WriteArray($this->toArray($total), $AddSlashes);
+		return (string) e107::getArrayStorage()->serialize($this->toArray($total), $AddSlashes);
 	}
 
 	public function update($from_post = true, $force = false, $session_messages = false)
@@ -4029,7 +4037,7 @@ class e_admin_tree_model extends e_front_tree_model
 		if($table != 'admin_log')
 		{
 			$logData = array('TABLE'=>$table, 'WHERE'=>$sqlQry);
-			e107::getAdminLog()->addArray($logData)->save('ADMINUI_03');
+			e107::getLog()->addArray($logData)->save('ADMINUI_03');
 		}
 		return $res;
 	}

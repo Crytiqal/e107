@@ -10,16 +10,16 @@
  *
  */
 
-
-$pm_prefs = e107::getPlugPref('pm');
-
-if(!check_class($pm_prefs['pm_class']))
-{
-	return null; 
-}
-
 if (!defined('e107_INIT')) { exit; }
 if (!e107::isInstalled('pm')) { return ''; }
+
+$pm_prefs = e107::getPlugPref('pm');
+$pmClass = varset($pm_prefs['pm_class'], e_UC_NOBODY);
+if(!check_class($pmClass))
+{
+	return null;
+}
+
 
 /**
  *	Function to show a popup (if enabled) when new PMs arrive.
@@ -58,7 +58,7 @@ if(!function_exists('pm_show_popup'))
 	</html> ";
         $popuptext = str_replace("\n", '', $popuptext);
         $popuptext = str_replace("\t", '', $popuptext);
-        $text .= "
+        $text = "
 	<script type='text/javascript'>
 	winl=(screen.width-200)/2;
 	wint = (screen.height-100)/2;
@@ -140,11 +140,13 @@ $sc->wrapper('pm_menu');
 //	$txt = "\n".$tp->parseTemplate($pm_menu_template, TRUE, $sc);
 $txt = "\n".$tp->parseTemplate($template, TRUE, $sc);
 
-if($pm_inbox['inbox']['new'] > 0 && $pm_prefs['popup'] && strpos(e_SELF, 'pm.php') === FALSE && $_COOKIE['pm-alert'] != 'ON')
+$inboxNew = (int) varset($pm_inbox['inbox']['new'], 0);
+if($inboxNew > 0 && $pm_prefs['popup'] && strpos(e_SELF, 'pm.php') === FALSE && $_COOKIE['pm-alert'] != 'ON')
 {
 	$txt .= pm_show_popup($pm_inbox, $pm_prefs['popup_delay']);
 }
 
 //$ns->tablerender(LAN_PM, $txt, 'pm');
 $caption = varset($pm_prefs['title'], LAN_PM);
+$caption = defset($caption, $caption);
 $ns->tablerender($caption, $txt, 'pm');

@@ -19,7 +19,7 @@
 require_once('class2.php');
 if (!check_class(varset($pref['email_item_class'],e_UC_MEMBER)))
 {
-	header('Location: '.e_BASE.'index.php');
+	e107::redirect('Location: '.e_BASE.'index.php');
 	exit();
 }
 
@@ -115,10 +115,10 @@ if (isset($_POST['emailsubmit']))
 			$message .= "\n\n".LAN_EMAIL_1." ".$author;
 		}
 	}
-	else
-	{
+	//else
+//	{
 //		$message .= $comments."\n";			// Added to message later on
-	}
+//	}
 	$ip = e107::getIPHandler()->getIP(FALSE);
 	$message .= "\n\n".LAN_EMAIL_2." ".$ip."\n\n";
 
@@ -255,4 +255,3 @@ $text .= "
 $ns->tablerender(LAN_EMAIL_5, $text);
 
 require_once(FOOTERF);
-?>

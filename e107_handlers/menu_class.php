@@ -74,7 +74,7 @@ class e_menu
 	{
 		global $_E107;
 
-		if(vartrue($_E107['cli']))
+		if(!empty($_E107['cli']))
 		{
 			return;
 		}
@@ -368,15 +368,16 @@ class e_menu
 	private function getDataLegacy()
 	{
 		$sql = e107::getDb();
-		$menu_layout_field = THEME_LAYOUT!=e107::getPref('sitetheme_deflayout') ? THEME_LAYOUT : "";
+		$menu_layout_field = THEME_LAYOUT != e107::getPref('sitetheme_deflayout') ? THEME_LAYOUT : "";
 		
 	//	e107::getCache()->CachePageMD5 = md5(e_LANGUAGE.$menu_layout_field); // Disabled by line 93 of Cache class. 
 		//FIXME add a function to the cache class for this.
 
-		$cacheData = e107::getCache()->retrieve_sys("menus_".USERCLASS_LIST."_".md5(e_LANGUAGE.$menu_layout_field));
-
-	//	$menu_data = json_decode($cacheData,true);
-		$menu_data = e107::unserialize($cacheData);
+		if(!defined('PREVIEWTHEME'))
+		{
+			$cacheData = e107::getCache()->retrieve_sys("menus_".USERCLASS_LIST."_".md5(e_LANGUAGE.$menu_layout_field));
+			$menu_data = e107::unserialize($cacheData);
+		}
 
 		$eMenuArea = array();
 		// $eMenuList = array();
@@ -385,7 +386,9 @@ class e_menu
 		
 		if(empty($menu_data) || !is_array($menu_data))
 		{
-			$menu_qry = 'SELECT * FROM #menus WHERE menu_location > 0 AND menu_class IN ('.USERCLASS_LIST.') AND menu_layout = "'.$menu_layout_field.'" ORDER BY menu_location,menu_order';
+			$menu_qry = 'SELECT * FROM #menus WHERE menu_location > 0 AND menu_class IN ('.USERCLASS_LIST.')  ';
+			$menu_qry .= !defined('PREVIEWTHEME') ? 'AND menu_layout = "'.$menu_layout_field.'" ' : '';
+			$menu_qry .= 'ORDER BY menu_location,menu_order';
 			
 			if($sql->gen($menu_qry))
 			{
@@ -640,7 +643,7 @@ class e_menu
 			$caption = (vartrue($page['menu_icon'])) ? $tp->toIcon($page['menu_icon']) : '';
 			$caption .= $tp->toHTML($page['menu_title'], true, 'parse_sc, constants');
 			
-			if(vartrue($page['menu_template'])) // New v2.x templates. see core/menu_template.php 
+			if(!empty($page['menu_template'])) // New v2.x templates. see core/menu_template.php
 			{
 				$template = e107::getCoreTemplate('menu',$page['menu_template'],true,true);	// override and merge required. ie. when menu template is not in the theme, but only in the core. 
 				$page_shortcodes = e107::getScBatch('page',null,'cpage');  

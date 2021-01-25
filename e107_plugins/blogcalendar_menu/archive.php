@@ -17,12 +17,13 @@
 | Based on code by: Thomas Bouve (crahan@gmx.net)
 */
 	
-require_once("../../class2.php");
+require_once(__DIR__."/../../class2.php");
 require_once(e_HANDLER."userclass_class.php");
 	
 e107::includeLan(e_PLUGIN."blogcalendar_menu/languages/".e_LANGUAGE.".php");
 require_once("calendar.php");
 require_once("functions.php");
+e107::title(BLOGCAL_L1." - ".BLOGCAL_L2);
 require_once(HEADERF);
 	
 // ---------------------
@@ -45,7 +46,7 @@ $pref['blogcal_ws'] = "monday";
 $cur_year = date("Y");
 $cur_month = date("n");
 $cur_day = date("j");
-if (strstr(e_QUERY, "year")) 
+if (strpos(e_QUERY, "year") !== false)
 {
   $tmp = explode(".", e_QUERY);
   if (is_numeric($tmp[1]))
@@ -73,6 +74,8 @@ $end_year = $cur_year;
 $year_selector = "<div class='forumheader' style='text-align: center; margin-bottom: 2px;'>";
 $year_selector .= "".BLOGCAL_ARCHIV1.": <select name='activate' onchange='urljump(this.options[selectedIndex].value)' class='tbox'>\n";
 
+$day_links = array();
+
 for($i = $start_year; $i <= $end_year; $i++) 
 {
 	$start = mktime(0, 0, 0, 1, 1, intval($req_year));
@@ -83,7 +86,7 @@ for($i = $start_year; $i <= $end_year; $i++)
 	if ($i == $req_year) 
 	{
 		$year_selector .= " selected='selected'";
-		if ($bcSql->db_Select("news", "news_id, news_datestamp, news_class", "news_datestamp > {$start} AND news_datestamp < {$end}")) 
+		if ($bcSql->select("news", "news_id, news_datestamp, news_class", "news_datestamp > {$start} AND news_datestamp < {$end}"))
 		{
 			while ($news = $bcSql->fetch())
 			{
@@ -147,7 +150,7 @@ for($i = 1; $i <= 12; $i++)
 	{
 		$req_day = "";
 	}
-	$archive .= "<div>".calendar($req_day, $i, $req_year, $day_links[$i], $pref['blogcal_ws'])."</div></td>\n";
+	$archive .= "<div>".calendar($req_day, $i, $req_year, varset($day_links[$i]), $pref['blogcal_ws'])."</div></td>\n";
 }
 $archive .= "</tr></table></div>";
 

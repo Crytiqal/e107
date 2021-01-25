@@ -14,7 +14,7 @@ if(!empty($_POST) && !isset($_POST['e-token']))
 {
 	$_POST['e-token'] = '';
 }
-require_once ('../class2.php');
+require_once (__DIR__.'/../class2.php');
 
 if(!getperms('G'))
 {
@@ -32,7 +32,7 @@ $mes = e107::getMessage();
 $frontPref = e107::pref('core'); // Get prefs
 
 // Get list of possible options for front page
-
+	$front_page = array();
 	// Welcome message is 'hardcoded' intentionally 
 	$front_page['wmessage'] = array(
 		'page' 	=> 'index.php', 
@@ -91,10 +91,10 @@ if(is_array($frontPref['frontpage']))
 	$i = 1;
 	foreach($frontPref['frontpage'] as $class => $val)
 	{
-		if($class == 'all')
+		if($class == 'all' || $class === 0)
 		{
 			$class = e_UC_PUBLIC;
-			$gotpub = TRUE;
+			$gotpub = true;
 		}
 		if($val)
 		{ // Only add non-null pages
@@ -147,11 +147,11 @@ elseif(isset($_POST['fp_dec']))
 }
 */
 
-if (isset($_POST))
+if (!empty($_POST))
 {
 
 	// avoid endless loop.
-	if($_POST['frontpage'] == 'other' && (trim($_POST['frontpage_other']) == 'index.php' || trim($_POST['frontpage_other']) == '{e_BASE}index.php'))
+	if(varset($_POST['frontpage']) == 'other' && (trim($_POST['frontpage_other']) == 'index.php' || trim($_POST['frontpage_other']) == '{e_BASE}index.php'))
 	{
 		$_POST['frontpage'] = 'wmessage';
 		$_POST['frontpage_other'] = '';
@@ -254,7 +254,7 @@ if(isset($_POST['fp_save_new']))
 	if($temp['order'] == 0) // New index to add
 	{
 		$ind = 0;
-		for($i = 1; $i <= count($fp_settings); $i ++)
+		for($i = 1, $iMax = count($fp_settings); $i <= $iMax; $i ++)
 		{
 			if($fp_settings[$i]['class'] == $temp['class'])
 				$ind = $i;
@@ -307,7 +307,7 @@ if($fp_update_prefs)
 { // Save the two arrays
 	$fp_list = array();
 	$fp_force = array();
-	for($i = 1; $i <= count($fp_settings); $i ++)
+	for($i = 1, $iMax = count($fp_settings); $i <= $iMax; $i ++)
 	{
 		$fp_list[$fp_settings[$i]['class']] = $fp_settings[$i]['page'];
 		$fp_force[$fp_settings[$i]['class']] = $fp_settings[$i]['force'];
@@ -383,7 +383,7 @@ class frontpage
 		$show_legend = $show_button ? " class='e-hideme'" : '';
 		$text = "
 		<form method='post' action='".e_SELF."'>
-		<input type='hidden' name='e-token' value='".e_TOKEN."' />
+		<input type='hidden' name='e-token' value='".defset('e_TOKEN')."' />
 			<fieldset id='frontpage-settings'>
 				<legend{$show_legend}>".FRTLAN_13."</legend>
 
@@ -406,29 +406,33 @@ class frontpage
 					</thead>
 					<tbody>";
 
-		foreach($fp_settings as $order => $current_value)
+		if(!empty($fp_settings))
 		{
-			$title = e107::getUserClass()->getName($current_value['class']);
-			$text .= "
-					<tr>
-						<td class='left'>".$order."</td>
-						<td>".$title."</td>
-						<td>".$this->lookup_path($current_value['page'])."</td>
-						<td>".$this->lookup_path($current_value['force'])."</td>
-						<td class='center options last'>
-						<div class='btn-group'>";
 
-					//		".$frm->admin_button('fp_inc',$order,'up',ADMIN_UP_ICON)."
-					//		".$frm->admin_button('fp_dec',$order,'down',ADMIN_DOWN_ICON)."
+			foreach($fp_settings as $order => $current_value)
+			{
+				$title = e107::getUserClass()->getName($current_value['class']);
+				$text .= "
+						<tr>
+							<td class='left'>".$order."</td>
+							<td>".$title."</td>
+							<td>".$this->lookup_path($current_value['page'])."</td>
+							<td>".$this->lookup_path($current_value['force'])."</td>
+							<td class='center options last'>
+							<div class='btn-group'>";
 
-						$text .= "
-							<a class='btn btn-default' title='".LAN_EDIT."' href='".e_SELF."?id=".$order."' >".ADMIN_EDIT_ICON."</a>
-							".$frm->admin_button('fp_delete_rule['.$order.']',$order,'',ADMIN_DELETE_ICON)."					
-						</div>
-						</td>
-					</tr>";
-					
-					
+						//		".$frm->admin_button('fp_inc',$order,'up',ADMIN_UP_ICON)."
+						//		".$frm->admin_button('fp_dec',$order,'down',ADMIN_DOWN_ICON)."
+
+							$text .= "
+								<a class='btn btn-default' title='".LAN_EDIT."' href='".e_SELF."?id=".$order."' >".ADMIN_EDIT_ICON."</a>
+								".$frm->admin_button('fp_delete_rule['.$order.']',$order,'',ADMIN_DELETE_ICON)."					
+							</div>
+							</td>
+						</tr>";
+
+
+			}
 		}
 		$text .= "
 		 		</tbody>
@@ -716,7 +720,7 @@ require_once(e_ADMIN.'footer.php');
  */
 function frontpage_adminlog($msg_num = '00', $woffle = '')
 {
-	e107::getAdminLog()->log_event('FRONTPG_'.$msg_num, $woffle, E_LOG_INFORMATIVE, '');
+	e107::getLog()->add('FRONTPG_'.$msg_num, $woffle, E_LOG_INFORMATIVE, '');
 }
 
 

@@ -411,7 +411,7 @@ abstract class e_marketplace_adapter_abstract
 	 */
 	public function hasAuthKey()
 	{
-		return ($this->authKey !== null) ? true : false;	
+		return $this->authKey !== null;
 	}
 	
 	/**
@@ -1086,7 +1086,7 @@ class eAuth
 	/**
 	 * Load credentials stored in a system file
 	 * @param boolean $force
-	 * @return e_marketplace_adapter_abstract adapter instance
+	 * @return e_marketplace_adapter_abstract|eAuth
 	 */
 	public function loadSysCredentials($force = false)
 	{
@@ -1169,7 +1169,7 @@ class eAuth
 		$total = array();
 		foreach($params as $k => $v)
 		{
-			if(substr($k, 0, 5) != "eauth") continue;
+			if(strpos($k, "eauth") !== 0) continue;
 			if(is_array($v))
 			{
 				throw new Exception('Arrays not supported in headers', 200);

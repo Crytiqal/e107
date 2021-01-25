@@ -10,7 +10,7 @@
  *
 */
 
-require_once("../class2.php");
+require_once(__DIR__."/../class2.php");
 
 if (!getperms("C"))
 {
@@ -50,33 +50,34 @@ if (isset($_POST['submit_cache']))
 
 if (isset($_POST['trigger_empty_cache']))
 {
-	e107::getAdminLog()->logSuccess(CACLAN_6);
+	e107::getLog()->addSuccess(CACLAN_6);
 	switch ($_POST['option_clear_cache'])
 	{
 		case 'empty_contentcache':
 			e107::getCache()->clearAll('content');
-			e107::getAdminLog()->flushMessages(CACLAN_5);
+			e107::getLog()->flushMessages(CACLAN_5);
 		break;
 
 		case 'empty_syscache':
 			e107::getCache()->clearAll('system');
-			e107::getAdminLog()->flushMessages(CACLAN_16);
+			e107::getLog()->flushMessages(CACLAN_16);
+			e107::getSession()->clear('addons-update-status');
 		break;
 
 		case 'empty_dbcache':
 			e107::getCache()->clearAll('db');
-			e107::getAdminLog()->flushMessages(CACLAN_24);
+			e107::getLog()->flushMessages(CACLAN_24);
 		break;
 
 		case 'empty_imgcache':
 			e107::getCache()->clearAll('image');
-			e107::getAdminLog()->flushMessages(CACLAN_25);
+			e107::getLog()->flushMessages(CACLAN_25);
 		break;
 		
 		// used in standard page output and internal JS includes
 		case 'empty_browsercache':
 			e107::getCache()->clearAll('browser');
-			e107::getAdminLog()->flushMessages(CACLAN_25);
+			e107::getLog()->flushMessages(CACLAN_25);
 		break;
 
 		case 'empty_jscss':
@@ -94,7 +95,8 @@ if (isset($_POST['trigger_empty_cache']))
 			e107::getCache()->clearAll('browser');
 			e107::getCache()->clearAll('js');
 			e107::getCache()->clearAll('css');
-			e107::getAdminLog()->flushMessages(CACLAN_26);
+			e107::getSession()->clear('addons-update-status');
+			e107::getLog()->flushMessages(CACLAN_26);
 		break;
 	}
 }

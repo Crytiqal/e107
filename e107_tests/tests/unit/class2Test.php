@@ -12,19 +12,11 @@
 	class class2Test extends \Codeception\Test\Unit
 	{
 
-		/** @var ${TESTED_NAME} */
-		protected $ep;
 
-		protected function _before()
+
+		function testLoadClass2()
 		{
-
-			/*try
-			{
-				$this->ep = $this->make('${TESTED_NAME}');
-			} catch(Exception $e)
-			{
-				$this->assertTrue(false, "Couldn't load ${TESTED_NAME} object");
-			}*/
+			require_once(e_BASE."class2.php"); // already loaded but coverage says otherwise.
 
 		}
 
@@ -40,6 +32,18 @@
 
 			$result = getperms('U1|U2', '0.');
 			$this->assertTrue($result);
+
+
+
+			$pid = e107::getDb()->retrieve('plugin', 'plugin_id', "plugin_path = 'gallery'");
+
+			$result = getperms('P', 'P'.$pid);
+			$this->assertFalse($result);
+
+
+			$result = getperms('P', 'P'.$pid, 'http://localhost/e107v2/e107_plugins/gallery/admin_config.php');
+			$this->assertTrue($result);
+
 
 		}
 
@@ -85,6 +89,12 @@
 			$this->assertFalse($result);
 
 			$result = check_class(e_UC_NOBODY, "253,254,250,251,0");
+			$this->assertFalse($result);
+
+			$result = check_class(e_UC_NEWUSER, "247,253,254,250,251,0");
+			$this->assertTrue($result);
+
+			$result = check_class(e_UC_NEWUSER, "253,254,250,251,0");
 			$this->assertFalse($result);
 
 			unset($_E107['phpunit']);

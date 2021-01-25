@@ -16,13 +16,16 @@ if(!defined('USER_AREA'))
 	//overload is now possible, prevent warnings
 	define('USER_AREA',TRUE);
 }
-define('ADMIN_AREA',FALSE);
+if(!defined('ADMIN_AREA'))
+{
+	define('ADMIN_AREA', false);
+}
 
 $e107 = e107::getInstance();
 $sql = e107::getDb();
 
 e107::getDebug()->logTime('(Header Top)');
-
+e107::getRender()->init();
 
 
 //e107::js('core',	'bootstrap/js/bootstrap-tooltip.js','jquery');
@@ -79,33 +82,6 @@ $js_body_onload = array();		// Legacy array of code to load with page.
 // A: Define themeable header parsing
 //
 
-if (!function_exists("parseheader")) 
-{
-	function parseheader($LAYOUT, $opts=array())
-	{
-		$tp 	= e107::getParser();
-		$tmp 	= explode("\n", $LAYOUT);
-
-		$sc = e107::getScBatch('_theme_');
-
-		$search = array_keys($opts);
-		$replace = array_values($opts);
-		
-		foreach ($tmp as $line) 
-		{
-			$line = str_replace($search, $replace, $line); // Quick-fix allow for use of {THEME} shortcode.
-
-			if (preg_match("/{.+?}/", $line))
-			{
-				echo $tp->parseTemplate($line, true, $sc)."\n";  // retain line-breaks. 
-			} 
-			else 
-			{
-				echo $line."\n"; // retain line-breaks. 
-			}
-		}
-	}
-}
 
 //
 // B: Send HTTP headers (these come before ANY html)
@@ -116,8 +92,10 @@ if (!function_exists("parseheader"))
 //if (stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml"))
 //  header("Content-type: application/xhtml+xml; charset=utf-8", TRUE);
 //else
-  header("Content-type: text/html; charset=utf-8", TRUE);
-
+if(!e107::isCli())
+{
+	header("Content-type: text/html; charset=utf-8", true);
+}
 // NEW - HTML5 default
 // TODO - more precise controlo over page header depending on the HTML5 mode
 if(!defined("XHTML4"))
@@ -228,7 +206,7 @@ if(THEME_LEGACY === true || !deftrue('BOOTSTRAP'))
 // re-initalize in case globals are destroyed from $e_headers includes
 $e_js = e107::getJs();
 $e_pref = e107::getConfig();
-
+$pref = e107::getPref();
 
 // --- Load plugin Meta files - now possible to add to all zones!  --------
 $e_meta_content = '';
@@ -559,9 +537,18 @@ elseif (file_exists(e_BASE."favicon.ico"))
 
 // Theme JS
 /** const THEME_ONLOAD @deprecated */
-if (defined('THEME_ONLOAD')) $js_body_onload[] = THEME_ONLOAD;
-$body_onload='';
-if (count($js_body_onload)) $body_onload = " onload=\"".implode(" ",$js_body_onload)."\"";
+if (defined('THEME_ONLOAD'))
+{
+	trigger_error('<b>THEME_ONLOAD is deprecated.</b> Use e107::js() instead.', E_USER_DEPRECATED); // NO LAN
+
+	$js_body_onload[] = THEME_ONLOAD;
+}
+
+$body_onload = '';
+if (count($js_body_onload))
+{
+	$body_onload = " onload=\"" . implode(" ", $js_body_onload) . "\"";
+}
 
 //
 // J: Send end of <head> and start of <body>
@@ -689,11 +676,14 @@ if($noBody === true) // New in v2.2.2 - remove need for BODYTAG.
 }
 elseif(!defined('BODYTAG')) // @deprecated.
 {
+
 	$body_onload .= " id='layout-".e107::getForm()->name2id(THEME_LAYOUT)."' ";
 	echo "<body".$body_onload.">\n";
 }
 else
 {
+	trigger_error('<b>BODYTAG is deprecated.</b> Use a theme.html file instead.', E_USER_DEPRECATED); // NO LAN
+
 	if ($body_onload)
 	{
 		// Kludge to get the CHAP code included
@@ -701,6 +691,7 @@ else
 	}
 	else
 	{
+
 		echo BODYTAG."\n";	
 	}
 }
@@ -742,7 +733,10 @@ if(deftrue('BOOTSTRAP'))
 
 
 // Header included notification, from this point header includes are not possible
-define('HEADER_INIT', TRUE);
+if(!defined('HEADER_INIT'))
+{
+	define('HEADER_INIT', TRUE);
+}
 
 e107::getDebug()->logTime("Main Page Body");
 
@@ -763,10 +757,11 @@ if ($e107_popup != 1) {
 //
 // M: Send top of body for custom pages and for news
 //
+e107::getDebug()->logTime('Render Layout');
 	// BC Fix
 	if (defset('e_PAGE') == 'news.php' && isset($NEWSHEADER))
 	{
-		parseheader($NEWSHEADER);
+		e107::renderLayout($NEWSHEADER);
 	}
 	else
 	{	
@@ -786,7 +781,7 @@ if ($e107_popup != 1) {
         '{---FOOTER---}'  => e107::getParser()->parseTemplate('{FOOTER}',true),
 		);
 		
-   		parseheader($HEADER, $psc);
+   		e107::renderLayout($HEADER, $psc);
 
 	//	echo $HEADER;
 	}
@@ -798,6 +793,7 @@ if ($e107_popup != 1) {
 //
 // N: Send other top-of-body HTML
 //
+e107::getDebug()->logTime('Render Other');
 
 	if(ADMIN && !vartrue($_SERVER['E_DEV']) && file_exists(e_BASE.'install.php'))
 	{
@@ -823,12 +819,12 @@ if ($e107_popup != 1) {
      * fix - only when e_FRONTPAGE set to true
      * @see core_index_index_controller/actionIndex
      */
-    if(deftrue('e_FRONTPAGE') && strstr($HEADER,"{WMESSAGE")===false && strstr($FOOTER,"{WMESSAGE")===false) // Auto-detection to override old pref.
+    if(deftrue('e_FRONTPAGE') && strpos($HEADER, "{WMESSAGE") === false && strpos($FOOTER, "{WMESSAGE") === false) // Auto-detection to override old pref.
 	{
 		echo e107::getParser()->parseTemplate("{WMESSAGE}");
 	}
 
-	if(!deftrue('e_IFRAME') && (strstr($HEADER,"{ALERTS}")===false && strstr($FOOTER,"{ALERTS}")===false)) // Old theme, missing {ALERTS}
+	if(!deftrue('e_IFRAME') && (strpos($HEADER, "{ALERTS}") === false && strpos($FOOTER, "{ALERTS}") === false)) // Old theme, missing {ALERTS}
 	{
 		if(deftrue('e_DEBUG'))
 		{
@@ -838,10 +834,9 @@ if ($e107_popup != 1) {
 		echo e107::getParser()->parseTemplate("{ALERTS}");
 	}
 
-
-	if(defined("PREVIEWTHEME")) 
+	if(defined("PREVIEWTHEME"))
 	{
-		themeHandler::showPreview();
+		e_theme::showPreview();
 	}
 
 

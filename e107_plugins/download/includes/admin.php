@@ -196,7 +196,13 @@ class download_cat_ui extends e_admin_ui
 
 		while($row = $sql->fetch())
 		{
-			$num = $row['_depth'] - 1;
+			$num = (int) $row['_depth'] - 1;
+
+			if($num < 0)
+			{
+				$num = 0;
+			}
+
 			$id = $row['download_category_id'];
 			$this->downloadCats[$id] = str_repeat("&nbsp;&nbsp;",$num).$row['download_category_name'];
 		}
@@ -313,10 +319,6 @@ class download_main_admin_ui extends e_admin_ui
 
 		// default - true - TODO - move to displaySettings
 		protected $batchDelete = true;
-
-		/** @deprecated see writeParms() on download_id below. */
-	//	protected $url         		= array('route'=>'download/view/item', 'vars' => array('id' => 'download_id', 'name' => 'download_sef'), 'name' => 'download_name', 'description' => ''); // 'link' only needed if profile not provided.
-
 
 	
     	protected  $fields = array(
@@ -536,16 +538,17 @@ $columnInfo = array(
 			
 		}
 		
-		
+		/*
 		
 		function orphanFiles() //TODO
 		{
-			
+			$sql = e107::getDb();
+			$tp = e107::getParser();
 			$files = e107::getFile()->get_files(e_DOWNLOAD);
             $foundSome = false;
             foreach($files as $file)
 			{
-               if (0 == $sql->db_Count('download', '(*)', " WHERE download_url='".$file['fname']."'")) {
+               if (0 == $sql->count('download', '(*)', " WHERE download_url='".$file['fname']."'")) {
                   if (!$foundSome) {
    		           // $text .= $rs->form_open("post", e_SELF."?".e_QUERY, "myform");
                      $text .= '<form method="post" action="'.e_SELF.'?'.e_QUERY.'" id="myform">
@@ -567,7 +570,7 @@ $columnInfo = array(
 
                }
             }
-		}
+		}*/
 
         /**
          * @inheritdoc
@@ -732,7 +735,7 @@ $columnInfo = array(
 
 
 		
-		function showMaint() //XXX Deprecated. 
+		function showMaint()
 		{
 			$mes = e107::getMessage();
 			$mes->addInfo("Deprecated Area - please use filter instead under 'Manage' ");
@@ -740,6 +743,7 @@ $columnInfo = array(
 			global $pref;
 			$ns = e107::getRender();
 			$sql = e107::getDb();
+			$sql2 = e107::getDb('sql2');
 			$frm = e107::getForm();
 			$tp = e107::getParser();
 			
@@ -788,7 +792,7 @@ $columnInfo = array(
 		                        $text .= '<td>*</td>';
 		                     }
 		                     $text .= '<td>'.$row['download_id'].'</td>';
-		                     $text .= "<td><a href='".e_PLUGIN."download/download.php?view.".$row['download_id']."'>".$e107->tp->toHTML($row['download_name']).'</a></td>';
+		                     $text .= "<td><a href='".e_PLUGIN."download/download.php?view.".$row['download_id']."'>".$tp->toHTML($row['download_name']).'</a></td>';
 		                     $text .= '<td>'.$tp->toHTML($row['download_category_name']).'</td>';
 		                     $text .= '<td>
 		                                 <a href="'.e_SELF.'?create.edit.'.$row["download_id"].'.maint.duplicates">'.ADMIN_EDIT_ICON.'</a>
@@ -816,7 +820,7 @@ $columnInfo = array(
 		            $files = $efile->get_files(e_DOWNLOAD);
 		            $foundSome = false;
 		            foreach($files as $file) {
-		               if (0 == $sql->db_Count('download', '(*)', " WHERE download_url='".$file['fname']."'")) {
+		               if (0 == $sql->count('download', '(*)', " WHERE download_url='".$file['fname']."'")) {
 		                  if (!$foundSome) {
 		   		           // $text .= $rs->form_open("post", e_SELF."?".e_QUERY, "myform");
 		                     $text .= '<form method="post" action="'.e_SELF.'?'.e_QUERY.'" id="myform">
@@ -926,8 +930,8 @@ $columnInfo = array(
 		                  
 		                  $text .= '<tr>';
 		                  $text .= '<td>'.$row['download_id'].'</td>';
-		                  $text .= "<td><a href='".e_PLUGIN."download/download.php?view.".$row['download_id']."'>".$e107->tp->toHTML($row['download_name']).'</a></td>';
-		                  $text .= '<td>'.$e107->tp->toHTML($row['download_category_name']).'</td>';
+		                  $text .= "<td><a href='".e_PLUGIN."download/download.php?view.".$row['download_id']."'>".$tp->toHTML($row['download_name']).'</a></td>';
+		                  $text .= '<td>'.$tp->toHTML($row['download_category_name']).'</td>';
 		                  if (strlen($row['download_url']) > 0) {
 		                     $text .= '<td>'.$row['download_url'].'</td>';
 		                  } else {
@@ -979,9 +983,9 @@ $columnInfo = array(
 		                  }
 		                  $text .= '<tr>';
 		                  $text .= '<td>'.$row['download_id'].'</td>';
-		                  $text .= "<td><a href='".e_PLUGIN."download/download.php?view.".$row['download_id']."'>".$e107->tp->toHTML($row['download_name']).'</a></td>';
+		                  $text .= "<td><a href='".e_PLUGIN."download/download.php?view.".$row['download_id']."'>".$tp->toHTML($row['download_name']).'</a></td>';
 		                  if (strlen($row['download_url']) > 0) {
-		                     $text .= '<td>'.$e107->tp->toHTML($row['download_url']).'</td>';
+		                     $text .= '<td>'.$tp->toHTML($row['download_url']).'</td>';
 		                  } else {
 		   					   $mirrorArray = download::makeMirrorArray($row['download_mirror'], TRUE);
 		                     $text .= '<td>';
@@ -1035,9 +1039,9 @@ $columnInfo = array(
 		                        }
 		                        $text .= '<tr>';
 		                        $text .= '<td>'.$row['download_id'].'</td>';
-		                        $text .= "<td><a href='".e_PLUGIN."download/download.php?view.".$row['download_id']."'>".$e107->tp->toHTML($row['download_name']).'</a></td>';
-		                        $text .= '<td>'.$e107->tp->toHTML($row['download_category_name']).'</td>';
-		                        $text .= '<td>'.$e107->tp->toHTML($row['download_url']).'</td>';
+		                        $text .= "<td><a href='".e_PLUGIN."download/download.php?view.".$row['download_id']."'>".$tp->toHTML($row['download_name']).'</a></td>';
+		                        $text .= '<td>'.$tp->toHTML($row['download_category_name']).'</td>';
+		                        $text .= '<td>'.$tp->toHTML($row['download_url']).'</td>';
 		                        $text .= '<td>'.$row['download_filesize'].' / ';
 		                        $text .= $filesize;
 		                        $text .= '</td>';
@@ -1303,7 +1307,7 @@ $columnInfo = array(
 	      {
 	         $fpath = str_replace(e_DOWNLOAD,"",$file_array[$counter]['path']).$file_array[$counter]['fname'];
 	         $selected = '';
-	         if (stristr($fpath, $download_url) !== FALSE)
+	         if (stripos($fpath, $download_url) !== false)
 	         {
 	            $selected = " selected='selected'";
 	            $found = 1;
@@ -1325,10 +1329,10 @@ $columnInfo = array(
 	         $etext = "";
 	      }
 	
-	      if (!$found && $download_url)
-	      {
+	      //if (!$found && $download_url)
+	   //   {
 	    //     $text .= "<option value='".$download_url."' selected='selected'>".$download_url.$etext."</option>\n";
-	      }
+	  //    }
 	
 	  //    $text .= "             </select>";
 	  
@@ -1877,11 +1881,11 @@ $columnInfo = array(
 				$updateArray = array_merge($dlInfo,$dlMirrors);
 				$updateArray['WHERE'] = 'download_id='.intval($id);
 				
-				$mes->addAuto($sql->db_Update('download',$updateArray), 'update', DOWLAN_2." (<a href='".e_PLUGIN."download/download.php?view.".$id."'>".$_POST['download_name']."</a>)");
+				$mes->addAuto($sql->update('download',$updateArray), 'update', DOWLAN_2." (<a href='".e_PLUGIN."download/download.php?view.".$id."'>".$_POST['download_name']."</a>)");
 	                
 				$dlInfo['download_id'] = $id;
 				$this->downloadLog('DOWNL_06',$dlInfo,$dlMirrors);
-				$dlInfo['download_datestamp'] = $time;      // This is what 0.7 did, regardless of settings
+				$dlInfo['download_datestamp'] = time(); // $time;      // This is what 0.7 did, regardless of settings
 				unset($dlInfo['download_class']);         // Also replicating 0.7
 				$e_event->trigger('dlupdate', $dlInfo); // @deprecated 
 				
@@ -1901,7 +1905,7 @@ $columnInfo = array(
 		
 		            $dlInfo['download_id'] = $download_id;
 		            $this->downloadLog('DOWNL_05',$dlInfo,$dlMirrors);
-		            $dlInfo['download_datestamp'] = $time;      // This is what 0.7 did, regardless of settings
+		            $dlInfo['download_datestamp'] = time(); // $time;      // This is what 0.7 did, regardless of settings
 		            unset($dlInfo['download_class']);         // Also replicating 0.7
 		            $e_event->trigger("dlpost", $dlInfo); // @deprecated 
 					
@@ -1909,7 +1913,7 @@ $columnInfo = array(
 		
 		            if ($_POST['remove_upload'])
 		            {
-		               $sql->db_Update("upload", "upload_active='1' WHERE upload_id='".$_POST['remove_id']."'");
+		               $sql->update("upload", "upload_active='1' WHERE upload_id='".$_POST['remove_id']."'");
 		               $mess = "<br/>".$_POST['download_name']." ".DOWLAN_104;
 		               $mess .= "<br/><br/><a href='".e_ADMIN."upload.php'>".DOWLAN_105."</a>";
 		               $this->show_message($mess);
@@ -1956,7 +1960,7 @@ $columnInfo = array(
 		  
 	      if ($delete == "mirror")
 	      {
-	         $mes->addAuto($sql -> db_Delete("download_mirror", "mirror_id=".$del_id), delete, DOWLAN_135);
+	         $mes->addAuto($sql ->delete("download_mirror", "mirror_id=".$del_id), delete, DOWLAN_135);
 	         e107::getLog()->add('DOWNL_14','ID: '.$del_id,E_LOG_INFORMATIVE,'');
 	      }
 	
@@ -2107,12 +2111,12 @@ $columnInfo = array(
 		
 		         if (isset($_POST['id']))
 		         {
-		            $mes->addAuto($sql -> db_Update("download_mirror", "mirror_name='{$name}', mirror_url='{$url}', mirror_image='".$tp->toDB($_POST['mirror_image'])."', mirror_location='{$location}', mirror_description='{$description}' WHERE mirror_id=".intval($_POST['id'])), 'update', DOWLAN_133);
+		            $mes->addAuto($sql ->update("download_mirror", "mirror_name='{$name}', mirror_url='{$url}', mirror_image='".$tp->toDB($_POST['mirror_image'])."', mirror_location='{$location}', mirror_description='{$description}' WHERE mirror_id=".intval($_POST['id'])), 'update', DOWLAN_133);
 		            e107::getLog()->add('DOWNL_13','ID: '.intval($_POST['id']).'[!br!]'.$logString,E_LOG_INFORMATIVE,'');
 		         }
 		         else
 		         {
-		            $mes->addAuto($sql -> db_Insert("download_mirror", "0, '{$name}', '{$url}', '".$tp->toDB($_POST['mirror_image'])."', '{$location}', '{$description}', 0"), 'insert', DOWLAN_134);
+		            $mes->addAuto($sql ->insert("download_mirror", "0, '{$name}', '{$url}', '".$tp->toDB($_POST['mirror_image'])."', '{$location}', '{$description}', 0"), 'insert', DOWLAN_134);
 		            e107::getLog()->add('DOWNL_12',$logString,E_LOG_INFORMATIVE,'');
 		         }
 		      }
@@ -2318,7 +2322,7 @@ $columnInfo = array(
 		            		         <col style='width:70%'/>
 		            		      </colgroup>
 		            		      <tr>
-		            		         <td>".DOWLAN_XXX."</td>
+		            		         <td>".defset('DOWLAN_XXX')."</td>
 		            		         <td>//TODO</td>
 		            		      </tr>
 		            		   </table>

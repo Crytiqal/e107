@@ -261,26 +261,209 @@ class e_user_model extends e_admin_model
 
 		if(empty($new_user_period))	{ return false; }
 
-		return (($this->get('user_join') > strtotime($new_user_period." days ago")) ? true : false);
+		return ($this->get('user_join') > strtotime($new_user_period . " days ago"));
 	}
 
-	final public function isBot()
+	final public function isBot($userAgent = null)
 	{
-		$userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+		if($userAgent === null  && isset($_SERVER['HTTP_USER_AGENT']))
+		{
+			$userAgent = $_SERVER['HTTP_USER_AGENT'];
+		}
 
 		if(empty($userAgent))
 		{
 			return false;
 		}
 
-		$botlist = array( "googlebot", "Bingbot", 'slurp', 'baidu', 'ichiro','nutch','yacy', "Teoma",
-		"alexa", "froogle", "Gigabot", "inktomi",
+			$botlist =  array(
+		// old list.
+		"Teoma", "alexa", "froogle", "Gigabot", "inktomi",
 		"looksmart", "URL_Spider_SQL", "Firefly", "NationalDirectory",
 		"Ask Jeeves", "TECNOSEEK", "InfoSeek", "WebFindBot", "girafabot",
-		"crawler", "www.galaxy.com", "Scooter", "msnbot", "appie", "FAST", "WebBug", "Spade", "ZyBorg", "rabaz",
+		"crawler", "www.galaxy.com", "Googlebot", "Scooter", "Slurp",
+		"msnbot", "appie", "FAST", "WebBug", "Spade", "ZyBorg", "rabaz",
 		"Baiduspider", "Feedfetcher-Google", "TechnoratiSnoop", "Rankivabot",
 		"Mediapartners-Google", "Sogou web spider", "WebAlta Crawler","TweetmemeBot",
-		"Butterfly","Twitturls","Me.dium","Twiceler");
+		"Butterfly","Twitturls","Me.dium","Twiceler",
+
+		// new list.
+				'80legs',
+				'ABACHOBot',
+				'Accoona-AI-Agent',
+				'AddSugarSpiderBot',
+				'AnyApexBot',
+				'Arachmo',
+				'B-l-i-t-z-B-O-T',
+				'Baiduspider',
+				'BecomeBot',
+				'BeslistBot',
+				'BillyBobBot',
+				'Bimbot',
+				'bingbot',
+				'BlitzBot',
+				'boitho.com-dc',
+				'boitho.com-robot',
+				'btbot',
+				'CatchBot',
+				'Cerberian Drtrs',
+				'Charlotte',
+				'ConveraCrawler',
+				'cosmos',
+				'Covario',
+				'DataparkSearch',
+				'DiamondBot',
+				'Discobot',
+				'dotnetdot', // DotBot
+				'EARTHCOM.info',
+				'EmeraldShield.com WebBot',
+				'envolk[ITS]spider',
+				'EsperanzaBot',
+				'Exabot',
+				'FAST Enterprise',
+				'fastsearch', // FAST Enterprise
+				'FAST-WebCrawler',
+				'FDSE robot',
+				'findlinks',
+				'FurlBot',
+				'FyberSpider',
+				'g2crawler',
+				'Gaisbot',
+				'GalaxyBot',
+				'genieBot',
+				'Gigabot',
+				'Girafabot',
+				'Googlebot',
+				'Googlebot-Image',
+				'GurujiBot',
+				'HappyFunBot',
+				'hl_ftien_spider',
+				'holmes',
+				'htdig',
+				'iaskspider',
+				'ia_archiver',
+				'iCCrawler',
+				'ichiro',
+				'igdeSpyder',
+				'IRLbot',
+				'IssueCrawler',
+				'Jaxified Bot',
+				'Jyxobot',
+				'KoepaBot',
+				'L.webis',
+				'LapozzBot',
+				'larbin',
+				'LDSpider',
+				'LexxeBot',
+				'Linguee Bot',
+				'LinkWalker',
+				'lmspider',
+				'lwp-trivial',
+				'mabontland',
+				'magpie-crawler',
+				'Mediapartners-Google',
+				'MJ12bot',
+				'MLBot',
+				'Mnogosearch',
+				'mogimogi',
+				'MojeekBot',
+				'Moreoverbot',
+				'Morning Paper',
+				'msnbot',
+				'msrbot',
+				'MVAClient',
+				'mxbot',
+				'NetResearchServer',
+				'NetSeer',
+				'NewsGator',
+				'NG-Search',
+				'nicebot',
+				'noxtrumbot',
+				'Nusearch Spider',
+				'NutchCVS',
+				'Nymesis',
+				'obot',
+				'oegp',
+				'omgilibot',
+				'OmniExplorer_Bot',
+				'OOZBOT',
+				'Orbiter',
+				'PageBites',
+				'Peew',
+				'polybot',
+				'Pompos',
+				'PostPost',
+				'psbot',
+				'PycURL',
+				'Qseero',
+				'radian',
+				'RAMPyBot',
+				'RufusBot',
+				'SandCrawler',
+				'SBIder',
+				'ScoutJet',
+				'Scrubby',
+				'SearchSight',
+				'Seekbot',
+				'semanticdiscovery',
+				'Sensis Web Crawler',
+				'SEOChat::Bot',
+				'SeznamBot',
+				'Shim-Crawler',
+				'ShopWiki',
+				'Shoula robot',
+				'Silk',
+				'silk',
+				'Sitebot',
+				'Snappy',
+				'sogou spider',
+				'Sosospider',
+				'Speedy Spider',
+				'Sqworm',
+				'StackRambler',
+				'suggybot',
+				'SurveyBot',
+				'SynooBot',
+				'Teoma',
+				'TerrawizBot',
+				'TheSuBot',
+				'Thumbnail.CZ robot',
+				'TinEye',
+				'truwoGPS',
+				'TurnitinBot',
+				'TweetedTimes Bot',
+				'TwengaBot',
+				'updated',
+				'Urlfilebot',
+				'Vagabondo',
+				'VoilaBot',
+				'Vortex',
+				'voyager',
+				'VYU2',
+				'webcollage',
+				'Websquash.com',
+				'wf84',
+				'WoFindeIch Robot',
+				'WomlpeFactory',
+				'Xaldon_WebSpider',
+				'yacy',
+				'Yahoo! Slurp',
+				'Yahoo! Slurp China',
+				'YahooSeeker',
+				'YahooSeeker-Testing',
+				'YandexBot',
+				'YandexImages',
+				'YandexMetrika',
+				'Yasaklibot',
+				'Yeti',
+				'YodaoBot',
+				'yoogliFetchAgent',
+				'YoudaoBot',
+				'Zao',
+				'Zealbot',
+				'zspider',
+				'ZyBorg'
+			);
 
 		foreach($botlist as $bot)
 		{
@@ -307,12 +490,12 @@ class e_user_model extends e_admin_model
 
 	final public function hasBan()
 	{
-		return ((integer)$this->get('user_ban') === 1 ? true : false);
+		return ((integer) $this->get('user_ban') === 1);
 	}
 
 	final public function hasRestriction()
 	{
-		return ((integer)$this->get('user_ban') === 0 ? false : true);
+		return ((integer) $this->get('user_ban') !== 0);
 	}
 
 	public function hasEditor()
@@ -385,6 +568,11 @@ class e_user_model extends e_admin_model
 		return '(^|,)('.str_replace(',', '|', $this->getClassList(true)).')(,|$)';
 	}
 
+	/**
+	 * @param $class
+	 * @param bool $allowMain
+	 * @return bool
+	 */
 	final public function checkClass($class, $allowMain = true)
 	{
 		// FIXME - replace check_class() here
@@ -922,7 +1110,7 @@ class e_user_model extends e_admin_model
 		$editor = $this->getEditor();
 		if($this->getId() === $editor->getId() || $editor->isMainAdmin() || $editor->checkAdminPerms('4'))
 			$perm = true;
-		return ($perm || (!in_array($field, array('user_admin', 'user_perms', 'user_prefs', 'user_password') && $editor->checkClass($this->_memberlist_access))));
+		return ($perm || (!in_array($field, array('user_admin', 'user_perms', 'user_prefs', 'user_password')) && $editor->checkClass($this->_memberlist_access)));
 	}
 
 	/**
@@ -1322,13 +1510,13 @@ class e_system_user extends e_user_model
 			break;
 				
 			case 'notify': 
-				if(vartrue($userInfo['mail_body'])) $template = $userInfo['mail_body']; //$NOTIFY_HEADER.$userInfo['mail_body'].$NOTIFY_FOOTER; 
+				if(!empty($userInfo['mail_body'])) $template = $userInfo['mail_body']; //$NOTIFY_HEADER.$userInfo['mail_body'].$NOTIFY_FOOTER;
 				$ret['template'] = 'notify';
 			break;
 				
 			case 'email':
 			case 'default':
-				if(vartrue($userInfo['mail_body'])) $template = $userInfo['mail_body']; //$EMAIL_HEADER.$userInfo['mail_body'].$EMAIL_FOOTER; 
+				if(!empty($userInfo['mail_body'])) $template = $userInfo['mail_body']; //$EMAIL_HEADER.$userInfo['mail_body'].$EMAIL_FOOTER;
 				$ret['template'] = 'default';
 			break;
 		}
@@ -1400,7 +1588,7 @@ class e_system_user extends e_user_model
 				}
 			
 				$HEAD .= "</head>\n";
-				if(vartrue($SIGNUPEMAIL_BACKGROUNDIMAGE)) // @deprecated. 
+				if(!empty($SIGNUPEMAIL_BACKGROUNDIMAGE)) // @deprecated.
 				{
 					$HEAD .= "<body background=\"".$SIGNUPEMAIL_BACKGROUNDIMAGE."\" >\n";
 				}
@@ -1659,7 +1847,7 @@ class e_user extends e_user_model
 		}
 
 		// TODO - lan
-		e107::getAdminLog()->log_event('Head Admin used Login As feature', 'Head Admin [#'.$this->getId().'] '.$this->getName().' logged in user account #'.$user_id);
+		e107::getLog()->add('Head Admin used Login As feature', 'Head Admin [#'.$this->getId().'] '.$this->getName().' logged in user account #'.$user_id);
 		//$this->loadAs(); - shouldn't be called here - loginAs should be called in Admin area only, loadAs - front-end
 		return true;
 	}
@@ -2188,7 +2376,7 @@ class e_user_extended_model extends e_admin_model
 	 * @param mixed $value
 	 * @param boolean $short if true, 'user_' prefix will be added to field name
 	 * @param boolean $strict if false no Applicable check will be made
-	 * @return e_user_model
+	 * @return e_user_model|e_user_extended_model
 	 */
 	public function setSystem($field, $value, $short = true, $strict = true)
 	{
@@ -2483,7 +2671,7 @@ class e_user_extended_structure_model extends e_model
 	 *
 	 * @param string $field
 	 * @param mixed $value
-	 * @return e_user_model
+	 * @return e_user_model|e_user_extended_structure_model
 	 */
 	public function setValue($field, $value)
 	{
@@ -2577,7 +2765,7 @@ class e_user_extended_structure_tree extends e_tree_model
 
 	/**
 	 * @param string $name name field value
-	 * @return e_user_extended_structure_model
+	 * @return e_user_extended_structure_model|e_model
 	 */
 	public function getNodeByName($name)
 	{
@@ -2723,7 +2911,7 @@ class e_user_pref extends e_front_model
 			if(!empty($data))
 			{
 				// BC
-				$data = substr($data, 0, 5) == "array" ? e107::unserialize($data) : unserialize($data);
+				$data = strpos($data, "array") === 0 ? e107::unserialize($data) : unserialize($data);
 				if(!$data) $data = array();
 			}
 			else $data = array();
